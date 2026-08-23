@@ -600,13 +600,6 @@
                     <p class="text-[13px] text-gray-500 mb-4">권장 규격 — PC: 1920 × 540px(가로형) / 모바일: 800 × 760px(세로형). 좌측에 흰 글씨가 올라가므로 좌측이 어두운 사진을 권장합니다.</p>
                     <div id="banner-admin-list" class="space-y-4 mb-6"></div>
                     <button onclick="addBanner()" class="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 text-sm font-bold hover:border-primary/40 hover:text-primary transition"><i class="fas fa-plus mr-1.5"></i>배너 추가</button>
-
-                    <div class="mt-6 pt-5 border-t border-gray-100">
-                        <p class="text-sm font-bold text-gray-800 mb-1.5">오른쪽 보조문구 (3개, 배너 전환마다 순서대로 반복 표시)</p>
-                        <p class="text-[12px] text-gray-400 mb-3">왼쪽 문구·사진은 배너마다 그대로 유지되고, 오른쪽 문구만 배너가 바뀔 때마다 여기 입력한 3개를 순서대로 돌아가며 보여줍니다.</p>
-                        <div id="banner-subtext-admin-list" class="space-y-2.5"></div>
-                    </div>
-
                     <div class="flex justify-end gap-2 mt-6 pt-5 border-t border-gray-100">
                         <button onclick="switchTab('admin-hub')" class="px-6 py-2.5 rounded-full ring-1 ring-gray-200 bg-white text-sm font-medium text-gray-600 hover:ring-gray-300 transition">뒤로</button>
                         <button id="admin-banner-submit-btn" onclick="saveBanners()" class="px-8 py-2.5 rounded-full bg-primary text-sm font-bold text-white shadow-[0_4px_14px_rgba(47,59,137,0.25)] hover:-translate-y-0.5 transition-all duration-200">저장하기</button>
@@ -1598,8 +1591,12 @@
                 line2: "공개 강좌 안내",
                 btnText: "강좌 일정 보기",
                 link: "#poster-section",
-                sub1: "이제 대한민국 유명 보험 강좌를",
-                sub2: "한곳에서 확인하실 수 있습니다."
+                // 오른쪽 보조문구 3개 — 이 배너가 나올 때마다 순서대로 반복 표시
+                subVariants: [
+                    { sub1: "이제 대한민국 유명 보험 강좌를", sub2: "한곳에서 확인하실 수 있습니다." },
+                    { sub1: "", sub2: "" },
+                    { sub1: "", sub2: "" }
+                ]
             },
             {
                 image: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1920&q=80",
@@ -1607,20 +1604,16 @@
                 line2: "최고 강사를 Pick하다",
                 btnText: "강사 리스트 보기",
                 link: "#instructor-section",
-                sub1: "강사 섭외 스트레스를 없애드립니다.",
-                sub2: "강의영상을 먼저 확인하고 선택합니다."
+                subVariants: [
+                    { sub1: "강사 섭외 스트레스를 없애드립니다.", sub2: "강의영상을 먼저 확인하고 선택합니다." },
+                    { sub1: "", sub2: "" },
+                    { sub1: "", sub2: "" }
+                ]
             }
         ];
 
-        // 배너 오른쪽 보조문구 — 배너 슬라이드(이미지)와 무관하게, 전환될 때마다 순서대로 반복 표시
-        let bannerSubtexts = [
-            { sub1: "이제 대한민국 유명 보험 강좌를", sub2: "한곳에서 확인하실 수 있습니다." },
-            { sub1: "강사 섭외 스트레스를 없애드립니다.", sub2: "강의영상을 먼저 확인하고 선택합니다." },
-            { sub1: "", sub2: "" }
-        ];
-        let bannerSubRotateIdx = -1;
-
         let bannerIdx = 0;
+        let bannerSlideSubIdx = [];   // 배너별(슬라이드별) 오른쪽 보조문구 순환 인덱스
         let bannerTimer = null;
 
         // ===== 상단 광고 배너 (gaworld 스타일: 가로 슬라이드) =====
@@ -1698,6 +1691,7 @@
             const dots  = document.getElementById('banner-dots');
             if (!track) return;
 
+            bannerSlideSubIdx = banners.map(() => -1);
             track.innerHTML = '';
             banners.forEach((b, i) => {
                 const slide = document.createElement('div');
@@ -1896,40 +1890,32 @@
                             <input type="text" data-bn="btnText" data-i="${i}" value="${(b.btnText||'').replace(/"/g,'&quot;')}" placeholder="버튼 문구" class="flex-1 p-2.5 rounded-lg ring-1 ring-gray-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary/40">
                             <input type="text" data-bn="link" data-i="${i}" value="${(b.link||'').replace(/"/g,'&quot;')}" placeholder="버튼 링크 (예: #poster-section)" class="flex-1 p-2.5 rounded-lg ring-1 ring-gray-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary/40">
                         </div>
+                        <div class="border-t border-dashed border-gray-200 my-1"></div>
+                        <p class="text-[11px] font-semibold text-gray-500">오른쪽 보조문구 3개 — 이 배너가 나올 때마다 순서대로 반복 표시</p>
+                        ${[0, 1, 2].map(v => {
+                            const s = (b.subVariants && b.subVariants[v]) || { sub1: '', sub2: '' };
+                            return `
+                        <div class="flex gap-2">
+                            <input type="text" data-bnsub="sub1" data-i="${i}" data-v="${v}" value="${(s.sub1||'').replace(/"/g,'&quot;')}" placeholder="${v+1}번째 1줄" class="flex-1 p-2.5 rounded-lg ring-1 ring-gray-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary/40">
+                            <input type="text" data-bnsub="sub2" data-i="${i}" data-v="${v}" value="${(s.sub2||'').replace(/"/g,'&quot;')}" placeholder="${v+1}번째 2줄" class="flex-1 p-2.5 rounded-lg ring-1 ring-gray-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary/40">
+                        </div>`;
+                        }).join('')}
                     </div>`;
                 list.appendChild(row);
             });
             if (banners.length === 0) list.innerHTML = '<p class="text-center text-gray-400 text-sm py-6">등록된 배너가 없습니다. 아래 버튼으로 추가하세요.</p>';
-            renderBannerSubtextAdmin();
-        }
-        // 오른쪽 보조문구 3개 (배너 슬라이드와 무관, 전환마다 순서대로 반복 표시)
-        function renderBannerSubtextAdmin() {
-            const wrap = document.getElementById('banner-subtext-admin-list');
-            if (!wrap) return;
-            wrap.innerHTML = '';
-            for (let i = 0; i < 3; i++) {
-                const s = bannerSubtexts[i] || { sub1: '', sub2: '' };
-                const row = document.createElement('div');
-                row.className = 'flex gap-2';
-                row.innerHTML = `
-                    <input type="text" data-bst="sub1" data-i="${i}" value="${(s.sub1||'').replace(/"/g,'&quot;')}" placeholder="${i+1}번째 보조문구 1줄" class="flex-1 p-2.5 rounded-lg ring-1 ring-gray-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary/40">
-                    <input type="text" data-bst="sub2" data-i="${i}" value="${(s.sub2||'').replace(/"/g,'&quot;')}" placeholder="${i+1}번째 보조문구 2줄" class="flex-1 p-2.5 rounded-lg ring-1 ring-gray-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary/40">
-                `;
-                wrap.appendChild(row);
-            }
-        }
-        function collectBannerSubtextInputs() {
-            const list = [{ sub1: '', sub2: '' }, { sub1: '', sub2: '' }, { sub1: '', sub2: '' }];
-            document.querySelectorAll('#banner-subtext-admin-list [data-bst]').forEach(el => {
-                const i = +el.dataset.i, key = el.dataset.bst;
-                if (list[i]) list[i][key] = el.value.trim();
-            });
-            bannerSubtexts = list;
         }
         function collectBannerInputs() {
             document.querySelectorAll('#banner-admin-list [data-bn]').forEach(el => {
                 const i = +el.dataset.i, key = el.dataset.bn;
                 if (banners[i]) banners[i][key] = el.value.trim();
+            });
+            document.querySelectorAll('#banner-admin-list [data-bnsub]').forEach(el => {
+                const i = +el.dataset.i, v = +el.dataset.v, key = el.dataset.bnsub;
+                if (!banners[i]) return;
+                if (!banners[i].subVariants) banners[i].subVariants = [{sub1:'',sub2:''},{sub1:'',sub2:''},{sub1:'',sub2:''}];
+                if (!banners[i].subVariants[v]) banners[i].subVariants[v] = { sub1: '', sub2: '' };
+                banners[i].subVariants[v][key] = el.value.trim();
             });
         }
         async function onBannerImage(i, input) {
@@ -2003,19 +1989,17 @@
             banners[i].videoMobile = '';
             renderBannerAdmin();
         }
-        function addBanner() { collectBannerInputs(); banners.push({ image:'', video:'', line1:'', line2:'', btnText:'', link:'' }); renderBannerAdmin(); }
+        function addBanner() { collectBannerInputs(); banners.push({ image:'', video:'', line1:'', line2:'', btnText:'', link:'', subVariants:[{sub1:'',sub2:''},{sub1:'',sub2:''},{sub1:'',sub2:''}] }); renderBannerAdmin(); }
         function removeBanner(i) { collectBannerInputs(); banners.splice(i, 1); renderBannerAdmin(); }
         async function saveBanners() {
             collectBannerInputs();
-            collectBannerSubtextInputs();
             const btn = document.getElementById('admin-banner-submit-btn');
             btn.disabled = true;
             try {
                 await PickDB.saveBanners(banners);
-                await PickDB.saveBannerSubtexts(bannerSubtexts);
+                await PickDB.saveBannerSubtexts(banners);
                 await loadFromDB();
                 bannerIdx = 0;
-                bannerSubRotateIdx = -1;
                 renderAll();
                 alert('메인 배너가 저장되었습니다.');
                 switchTab('landing');
@@ -2032,12 +2016,15 @@
             const counter = document.getElementById('banner-counter');
             if (!track) return;
 
-            // 오른쪽 보조문구: 배너 슬라이드(왼쪽 문구·이미지)와 무관하게, 전환될 때마다 순서대로 반복 표시
-            if (bannerSubtexts.length) {
-                bannerSubRotateIdx = (bannerSubRotateIdx + 1) % bannerSubtexts.length;
-                const cur = bannerSubtexts[bannerSubRotateIdx];
+            // 오른쪽 보조문구: 이 배너(슬라이드) 자신의 3개 세트 안에서, 이 배너가 나올 때마다 순서대로 반복 표시
+            const curBanner = banners[bannerIdx];
+            const variants = curBanner && curBanner.subVariants;
+            if (variants && variants.length) {
+                const prev = bannerSlideSubIdx[bannerIdx] ?? -1;
+                bannerSlideSubIdx[bannerIdx] = (prev + 1) % variants.length;
+                const cur = variants[bannerSlideSubIdx[bannerIdx]];
                 const activeSub = track.children[bannerIdx]?.querySelector('.banner-sub');
-                if (activeSub) {
+                if (activeSub && cur) {
                     const ps = activeSub.querySelectorAll('p');
                     if (ps[0]) ps[0].textContent = cur.sub1 || '';
                     if (ps[1]) ps[1].textContent = cur.sub2 || '';
@@ -2133,7 +2120,17 @@
                 posters = posts;
                 if (bans.length)  banners = bans;
                 if (ads.length)   topAds = ads;
-                if (subs.length)  bannerSubtexts = subs;
+                // 배너별 오른쪽 보조문구 3개씩을 slot 기준으로 각 배너에 묶어 넣기
+                if (bans.length) {
+                    bans.forEach((b, i) => {
+                        const slot = i + 1;
+                        const variants = subs.filter(s => s.slot === slot)
+                            .sort((a, c) => a.variantOrder - c.variantOrder)
+                            .map(s => ({ sub1: s.sub1, sub2: s.sub2 }));
+                        while (variants.length < 3) variants.push({ sub1: '', sub2: '' });
+                        b.subVariants = variants;
+                    });
+                }
             } catch (e) {
                 console.error('[데이터 조회 실패] 기본 데이터로 표시합니다.', e);
             }

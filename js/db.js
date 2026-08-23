@@ -73,7 +73,7 @@
     bg: r.bg || '', link: r.link || '',
   });
 
-  const toBannerSubtext = r => ({ id: r.id, sub1: r.sub1 || '', sub2: r.sub2 || '' });
+  const toBannerSubtext = r => ({ id: r.id, slot: r.slot, variantOrder: r.variant_order, sub1: r.sub1 || '', sub2: r.sub2 || '' });
 
   /* ---------- 화면 객체 → DB row 변환 ---------- */
   const fromInstructor = o => ({
@@ -159,9 +159,9 @@
     return data.map(toTopAd);
   }
 
-  // 메인 배너 오른쪽 보조문구 순환 세트 (배너 슬라이드와 무관하게 전환마다 순서대로 표시)
+  // 메인 배너 오른쪽 보조문구 — 배너(slot)마다 3개씩, 그 배너가 나올 때마다 순서대로 반복 표시
   async function fetchBannerSubtexts() {
-    const { data, error } = await sb.from('banner_subtexts').select('*').order('sort_order');
+    const { data, error } = await sb.from('banner_subtexts').select('*').order('slot').order('variant_order');
     if (error) err('배너 보조문구 조회', error);
     return data.map(toBannerSubtext);
   }
@@ -256,11 +256,19 @@
     if (error) err('배너 저장', error);
   }
 
-  async function saveBannerSubtexts(list) {
+  // bannersList: 화면의 banners 배열 (각 항목의 subVariants[0..2] = {sub1, sub2})
+  async function saveBannerSubtexts(bannersList) {
     const { error: dErr } = await sb.from('banner_subtexts').delete().neq('id', -1);
     if (dErr) err('배너 보조문구 초기화', dErr);
-    if (!list.length) return;
-    const rows = list.map((s, i) => ({ sort_order: i + 1, sub1: s.sub1 || null, sub2: s.sub2 || null }));
+    const rows = [];
+    bannersList.forEach((b, i) => {
+      const variants = (b.subVariants && b.subVariants.length) ? b.subVariants : [];
+      for (let v = 0; v < 3; v++) {
+        const s = variants[v] || {};
+        rows.push({ slot: i + 1, variant_order: v + 1, sub1: s.sub1 || null, sub2: s.sub2 || null });
+      }
+    });
+    if (!rows.length) return;
     const { error } = await sb.from('banner_subtexts').insert(rows);
     if (error) err('배너 보조문구 저장', error);
   }

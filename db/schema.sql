@@ -257,18 +257,23 @@ alter table public.posters
 
 
 -- ============================================================
--- 12. [추가] 메인 배너 오른쪽 보조문구 순환 세트
---     기존 banners.sub1/sub2 는 배너 슬라이드(이미지)마다 고정이었는데,
---     "왼쪽 문구는 배너별 그대로 두고, 오른쪽 문구만 배너 전환마다
---     별도로 3개를 순환 표시"하도록 요청받아 배너 슬라이드와 무관한
---     별도 테이블로 분리함. index.html/js/db.js 에서 사용.
+-- 12. [추가/수정] 메인 배너 오른쪽 보조문구 순환 세트 (배너별 3개)
+--     처음엔 배너 전체가 공유하는 3개 세트로 만들었다가, "배너 1·배너 2가
+--     각자 자기만의 3개 문구를 갖고, 그 배너가 나올 때마다 자기 세트
+--     안에서 순서대로 반복"하는 것으로 정정. slot(배너 순서)별로 3개씩
+--     묶어서 저장. 예전에 아래 create table 버전을 이미 실행했다면
+--     이 블록으로 다시 실행해서 교체할 것 (drop 후 재생성).
 -- ============================================================
-create table if not exists public.banner_subtexts (
-  id          bigserial primary key,
-  sort_order  int not null default 1,
-  sub1        text,
-  sub2        text,
-  updated_at  timestamptz not null default now()
+drop table if exists public.banner_subtexts cascade;
+
+create table public.banner_subtexts (
+  id             bigserial primary key,
+  slot           int not null,        -- 배너 순서(1,2,3...)와 매칭
+  variant_order  int not null,        -- 그 배너 안에서의 순번(1~3)
+  sub1           text,
+  sub2           text,
+  updated_at     timestamptz not null default now(),
+  unique (slot, variant_order)
 );
 
 alter table public.banner_subtexts enable row level security;
@@ -281,8 +286,12 @@ create policy adm_write_banner_subtexts on public.banner_subtexts
 create trigger trg_banner_subtexts_touch before update on public.banner_subtexts
   for each row execute function public.touch_updated_at();
 
--- 기존 배너 2개의 오른쪽 문구를 초기값으로 이관 (필요 없으면 지우고 관리자 화면에서 새로 입력)
-insert into public.banner_subtexts (sort_order, sub1, sub2) values
-  (1, '이제 대한민국 유명 보험 강좌를', '한곳에서 확인하실 수 있습니다.'),
-  (2, '강사 섭외 스트레스를 없애드립니다.', '강의영상을 먼저 확인하고 선택합니다.'),
-  (3, '', '');
+-- 기존 배너 2개의 오른쪽 문구를 각 배너의 1번째 세트 초기값으로 이관
+-- (2·3번째는 비워두었으니 관리자 화면에서 채워 넣을 것)
+insert into public.banner_subtexts (slot, variant_order, sub1, sub2) values
+  (1, 1, '이제 대한민국 유명 보험 강좌를', '한곳에서 확인하실 수 있습니다.'),
+  (1, 2, '', ''),
+  (1, 3, '', ''),
+  (2, 1, '강사 섭외 스트레스를 없애드립니다.', '강의영상을 먼저 확인하고 선택합니다.'),
+  (2, 2, '', ''),
+  (2, 3, '', '');
