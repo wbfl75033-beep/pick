@@ -375,6 +375,10 @@
                             <label class="w-32 text-sm font-bold text-gray-800 mb-2 md:mb-0">연락처</label>
                             <input type="text" id="admin-phone" class="flex-1 p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="예: 02-525-1686">
                         </div>
+                        <div class="flex flex-col md:flex-row md:items-center pt-4 border-t border-gray-100">
+                            <label class="w-32 text-sm font-bold text-gray-800 mb-2 md:mb-0">연락처(관리자용)<br><span class="text-[11px] font-normal text-gray-400">비공개</span></label>
+                            <input type="text" id="admin-phone-private" class="flex-1 p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="관리자만 볼 수 있는 연락처 (이용자 화면에 노출되지 않음)">
+                        </div>
                         <div class="pt-4 border-t border-gray-100">
                             <label class="block text-sm font-bold text-gray-800 mb-3">영상 등록 (임베드 URL 최대 3개)</label>
                             <p class="text-[11px] text-gray-400 mb-3">각 영상마다 썸네일을 등록하면, 상세페이지에서 이미지로 표시되고 클릭 시 재생됩니다. (비워두면 바로 영상 표시)<br>※ 코드/GitHub로 영구 저장하려면 <b>썸네일 이미지 주소(URL)</b>를 넣으세요. 파일 업로드는 미리보기용(임시)입니다.</p>
@@ -568,7 +572,7 @@
                     <button onclick="addTopAd()" class="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 text-sm font-bold hover:border-primary/40 hover:text-primary transition"><i class="fas fa-plus mr-1.5"></i>광고 추가</button>
                     <div class="flex justify-end gap-2 mt-6 pt-5 border-t border-gray-100">
                         <button onclick="switchTab('admin-hub')" class="px-6 py-2.5 rounded-full ring-1 ring-gray-200 bg-white text-sm font-medium text-gray-600 hover:ring-gray-300 transition">뒤로</button>
-                        <button onclick="saveTopAds()" class="px-8 py-2.5 rounded-full bg-primary text-sm font-bold text-white shadow-[0_4px_14px_rgba(47,59,137,0.25)] hover:-translate-y-0.5 transition-all duration-200">저장하기</button>
+                        <button id="admin-topad-submit-btn" onclick="saveTopAds()" class="px-8 py-2.5 rounded-full bg-primary text-sm font-bold text-white shadow-[0_4px_14px_rgba(47,59,137,0.25)] hover:-translate-y-0.5 transition-all duration-200">저장하기</button>
                     </div>
                 </div>
             </div>
@@ -589,7 +593,7 @@
                     <button onclick="addBanner()" class="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 text-sm font-bold hover:border-primary/40 hover:text-primary transition"><i class="fas fa-plus mr-1.5"></i>배너 추가</button>
                     <div class="flex justify-end gap-2 mt-6 pt-5 border-t border-gray-100">
                         <button onclick="switchTab('admin-hub')" class="px-6 py-2.5 rounded-full ring-1 ring-gray-200 bg-white text-sm font-medium text-gray-600 hover:ring-gray-300 transition">뒤로</button>
-                        <button onclick="saveBanners()" class="px-8 py-2.5 rounded-full bg-primary text-sm font-bold text-white shadow-[0_4px_14px_rgba(47,59,137,0.25)] hover:-translate-y-0.5 transition-all duration-200">저장하기</button>
+                        <button id="admin-banner-submit-btn" onclick="saveBanners()" class="px-8 py-2.5 rounded-full bg-primary text-sm font-bold text-white shadow-[0_4px_14px_rgba(47,59,137,0.25)] hover:-translate-y-0.5 transition-all duration-200">저장하기</button>
                     </div>
                 </div>
             </div>
@@ -1174,27 +1178,36 @@
         }
 
         // 강사 삭제
-        function deleteInstructor() {
+        async function deleteInstructor() {
             const inst = instructors.find(i => i.id === currentModalId);
             if (!inst) return;
             if (!confirm(`'${inst.name}' 강사를 삭제하시겠습니까?\n삭제 후에는 되돌릴 수 없습니다.`)) return;
-            const idx = instructors.findIndex(i => i.id === currentModalId);
-            if (idx > -1) instructors.splice(idx, 1);
-            closeModal();
-            renderInstructors();
-            alert("삭제되었습니다.");
+            try {
+                await PickDB.deleteInstructor(inst.id);
+                await loadFromDB();
+                renderAll();
+                closeModal();
+                alert("삭제되었습니다.");
+            } catch (e) {
+                alert("삭제에 실패했습니다.\n" + (e.message || ''));
+            }
         }
 
         // 공고 삭제
-        function deletePoster() {
+        async function deletePoster() {
             const pos = posters.find(x => x.id === currentPosterModalId);
             if (!pos) return;
             if (!confirm(`'${pos.title}' 공고를 삭제하시겠습니까?\n삭제 후에는 되돌릴 수 없습니다.`)) return;
-            const idx = posters.findIndex(x => x.id === currentPosterModalId);
-            if (idx > -1) posters.splice(idx, 1);
-            closePosterModal();
-            renderPosters();
-            alert("삭제되었습니다.");
+            try {
+                await PickDB.deletePoster(pos.id);
+                await loadFromDB();
+                renderAll();
+                closePosterModal();
+                alert("삭제되었습니다.");
+            } catch (e) {
+                alert("삭제에 실패했습니다.\n" + (e.message || ''));
+                return;
+            }
         }
 
         // 강사 순서 변경 (전체 배열 기준으로 이동)
@@ -1775,14 +1788,32 @@
                 if (topAds[i]) topAds[i][key] = el.value.trim();
             });
         }
-        function onTopAdImage(i, input) {
+        async function onTopAdImage(i, input) {
             collectTopAdInputs();
-            if (input.files && input.files[0]) topAds[i].image = URL.createObjectURL(input.files[0]);
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const oldUrl = topAds[i].image;
+            input.disabled = true;
+            try {
+                topAds[i].image = await PickUpload.uploadFromInput(input, 'ads');
+                if (oldUrl) PickUpload.removeByUrl(oldUrl);
+            } catch (e) {
+                alert('업로드에 실패했습니다.\n' + (e.message || ''));
+            }
             renderTopAdAdmin();
         }
-        function onTopAdImageMobile(i, input) {
+        async function onTopAdImageMobile(i, input) {
             collectTopAdInputs();
-            if (input.files && input.files[0]) topAds[i].imageMobile = URL.createObjectURL(input.files[0]);
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const oldUrl = topAds[i].imageMobile;
+            input.disabled = true;
+            try {
+                topAds[i].imageMobile = await PickUpload.uploadFromInput(input, 'ads');
+                if (oldUrl) PickUpload.removeByUrl(oldUrl);
+            } catch (e) {
+                alert('업로드에 실패했습니다.\n' + (e.message || ''));
+            }
             renderTopAdAdmin();
         }
         function clearTopAdMobile(i) {
@@ -1792,12 +1823,22 @@
         }
         function addTopAd() { collectTopAdInputs(); topAds.push({ image: '', bg: '#eef1f4', link: '' }); renderTopAdAdmin(); }
         function removeTopAd(i) { collectTopAdInputs(); topAds.splice(i, 1); renderTopAdAdmin(); }
-        function saveTopAds() {
+        async function saveTopAds() {
             collectTopAdInputs();
-            topAdIdx = 0;
-            renderTopAds();
-            alert('상단 광고가 반영되었습니다.\n(영구 저장은 서버 연동 후 동작합니다)');
-            switchTab('landing');
+            const btn = document.getElementById('admin-topad-submit-btn');
+            btn.disabled = true;
+            try {
+                await PickDB.saveTopAds(topAds);
+                await loadFromDB();
+                topAdIdx = 0;
+                renderAll();
+                alert('상단 광고가 저장되었습니다.');
+                switchTab('landing');
+            } catch (e) {
+                alert("저장에 실패했습니다.\n" + (e.message || ''));
+            } finally {
+                btn.disabled = false;
+            }
         }
 
         // ===== [관리자] 메인 배너 관리 =====
@@ -1860,14 +1901,32 @@
                 if (banners[i]) banners[i][key] = el.value.trim();
             });
         }
-        function onBannerImage(i, input) {
+        async function onBannerImage(i, input) {
             collectBannerInputs();
-            if (input.files && input.files[0]) banners[i].image = URL.createObjectURL(input.files[0]);
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const oldUrl = banners[i].image;
+            input.disabled = true;
+            try {
+                banners[i].image = await PickUpload.uploadFromInput(input, 'banners');
+                if (oldUrl) PickUpload.removeByUrl(oldUrl);
+            } catch (e) {
+                alert('업로드에 실패했습니다.\n' + (e.message || ''));
+            }
             renderBannerAdmin();
         }
-        function onBannerVideo(i, input) {
+        async function onBannerVideo(i, input) {
             collectBannerInputs();
-            if (input.files && input.files[0]) banners[i].video = URL.createObjectURL(input.files[0]);
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const oldUrl = banners[i].video;
+            input.disabled = true;
+            try {
+                banners[i].video = await PickUpload.uploadFromInput(input, 'banners');
+                if (oldUrl) PickUpload.removeByUrl(oldUrl);
+            } catch (e) {
+                alert('업로드에 실패했습니다.\n' + (e.message || ''));
+            }
             renderBannerAdmin();
         }
         function clearBannerVideo(i) {
@@ -1875,9 +1934,18 @@
             banners[i].video = '';
             renderBannerAdmin();
         }
-        function onBannerImageMobile(i, input) {
+        async function onBannerImageMobile(i, input) {
             collectBannerInputs();
-            if (input.files && input.files[0]) banners[i].imageMobile = URL.createObjectURL(input.files[0]);
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const oldUrl = banners[i].imageMobile;
+            input.disabled = true;
+            try {
+                banners[i].imageMobile = await PickUpload.uploadFromInput(input, 'banners');
+                if (oldUrl) PickUpload.removeByUrl(oldUrl);
+            } catch (e) {
+                alert('업로드에 실패했습니다.\n' + (e.message || ''));
+            }
             renderBannerAdmin();
         }
         function clearBannerImageMobile(i) {
@@ -1885,9 +1953,18 @@
             banners[i].imageMobile = '';
             renderBannerAdmin();
         }
-        function onBannerVideoMobile(i, input) {
+        async function onBannerVideoMobile(i, input) {
             collectBannerInputs();
-            if (input.files && input.files[0]) banners[i].videoMobile = URL.createObjectURL(input.files[0]);
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const oldUrl = banners[i].videoMobile;
+            input.disabled = true;
+            try {
+                banners[i].videoMobile = await PickUpload.uploadFromInput(input, 'banners');
+                if (oldUrl) PickUpload.removeByUrl(oldUrl);
+            } catch (e) {
+                alert('업로드에 실패했습니다.\n' + (e.message || ''));
+            }
             renderBannerAdmin();
         }
         function clearBannerVideoMobile(i) {
@@ -1897,12 +1974,22 @@
         }
         function addBanner() { collectBannerInputs(); banners.push({ image:'', video:'', line1:'', line2:'', btnText:'', link:'', sub1:'', sub2:'' }); renderBannerAdmin(); }
         function removeBanner(i) { collectBannerInputs(); banners.splice(i, 1); renderBannerAdmin(); }
-        function saveBanners() {
+        async function saveBanners() {
             collectBannerInputs();
-            bannerIdx = 0;
-            renderBanner();
-            alert('메인 배너가 반영되었습니다.\n(영구 저장은 서버 연동 후 동작합니다)');
-            switchTab('landing');
+            const btn = document.getElementById('admin-banner-submit-btn');
+            btn.disabled = true;
+            try {
+                await PickDB.saveBanners(banners);
+                await loadFromDB();
+                bannerIdx = 0;
+                renderAll();
+                alert('메인 배너가 저장되었습니다.');
+                switchTab('landing');
+            } catch (e) {
+                alert("저장에 실패했습니다.\n" + (e.message || ''));
+            } finally {
+                btn.disabled = false;
+            }
         }
 
         function updateBanner() {
@@ -2830,6 +2917,7 @@ function openPosterModal(id) {
             document.getElementById('admin-name').value = inst.name; document.getElementById('admin-title').value = inst.title;
             document.getElementById('admin-intro').value = inst.intro; document.getElementById('admin-profile').value = inst.profile;
             document.getElementById('admin-phone').value = inst.phone;
+            document.getElementById('admin-phone-private').value = inst.phonePrivate || '';
             for (let k = 0; k < 3; k++) {
                 const v = inst.videos[k];
                 const url = v ? (typeof v === 'string' ? v : (v.url || '')) : '';
@@ -2855,59 +2943,88 @@ function openPosterModal(id) {
             editingId = null;
             document.getElementById('admin-form-title').textContent = "강사 등록";
             const btn = document.getElementById('admin-submit-btn'); btn.textContent = "등록하기"; btn.classList.replace('bg-green-600', 'bg-primary');
-            ['name','title','intro','profile','phone','photo','profile-file','video-1','video-2','video-3','video-title-1','video-title-2','video-title-3','video-thumb-1','video-thumb-2','video-thumb-3','video-thumburl-1','video-thumburl-2','video-thumburl-3'].forEach(id => { const el = document.getElementById('admin-'+id); if (el) el.value = ''; });
+            ['name','title','intro','profile','phone','phone-private','photo','profile-file','video-1','video-2','video-3','video-title-1','video-title-2','video-title-3','video-thumb-1','video-thumb-2','video-thumb-3','video-thumburl-1','video-thumburl-2','video-thumburl-3'].forEach(id => { const el = document.getElementById('admin-'+id); if (el) el.value = ''; });
             document.querySelectorAll('input[name="category"]').forEach(cb => cb.checked = false);
             const defaultTag = document.querySelector('input[name="admin_tag"][value="none"]'); if(defaultTag) defaultTag.checked = true;
         }
 
         function cancelAdminForm() { resetAdminFormUI(); switchTab('landing'); }
 
-        function saveInstructor() {
+        async function saveInstructor() {
             const name = document.getElementById('admin-name').value.trim();
             if (!name) { alert("강사명을 입력해주세요."); return; }
             const categoryNodes = document.querySelectorAll('input[name="category"]:checked');
             const selectedCategories = Array.from(categoryNodes).map(cb => cb.value);
             if (selectedCategories.length === 0) { alert("분야를 최소 1개 이상 선택해주세요."); return; }
 
-            const newData = {
-                name: name, title: document.getElementById('admin-title').value.trim(), intro: document.getElementById('admin-intro').value.trim(),
-                profile: document.getElementById('admin-profile').value.trim(), phone: document.getElementById('admin-phone').value.trim(),
-                categories: selectedCategories, specialTag: document.querySelector('input[name="admin_tag"]:checked')?.value || 'none',
-               videos: [1, 2, 3].map(k => {
+            const specialTag = document.querySelector('input[name="admin_tag"]:checked')?.value || 'none';
+            // DB type 컬럼은 '추천'/'제휴'만 허용. '선택안함'은 '추천'으로 저장 (인수인계서 3장 기본값)
+            const type = specialTag.includes('제휴') ? '제휴' : '추천';
+            const cur = editingId ? instructors.find(i => i.id === editingId) : null;
+
+            const btn = document.getElementById('admin-submit-btn');
+            btn.disabled = true;
+            btn.dataset.origText = btn.textContent;
+            btn.textContent = '업로드 중...';
+            const oldFiles = []; // 저장 성공 후 정리할 이전 파일들
+            try {
+                const photoInput = document.getElementById('admin-photo');
+                let photo = cur ? cur.photo : '';
+                if (photoInput.files[0]) {
+                    photo = await PickUpload.uploadFromInput(photoInput, 'instructors');
+                    if (cur && cur.photo) oldFiles.push(cur.photo);
+                }
+                if (!editingId && !photo) photo = "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=800";
+
+                const profileFileInput = document.getElementById('admin-profile-file');
+                let profileFile = cur ? cur.profileFile : '';
+                if (profileFileInput && profileFileInput.files[0]) {
+                    profileFile = await PickUpload.uploadFromInput(profileFileInput, 'profiles');
+                    if (cur && cur.profileFile) oldFiles.push(cur.profileFile);
+                }
+
+                const videos = [];
+                for (const k of [1, 2, 3]) {
                     const thumbInput = document.getElementById('admin-video-thumb-' + k);
                     const thumbUrlInput = document.getElementById('admin-video-thumburl-' + k);
                     const v = {
                         url:   document.getElementById('admin-video-' + k).value.trim(),
                         title: document.getElementById('admin-video-title-' + k).value.trim()
                     };
-                    // 1순위: 주소(URL) 입력 → 코드에 영구 저장 가능
+                    const curThumb = cur && cur.videos && cur.videos[k-1] && typeof cur.videos[k-1] === 'object' ? cur.videos[k-1].thumbnail : '';
+                    // 1순위: 주소(URL) 입력 → 그대로 저장
                     if (thumbUrlInput && thumbUrlInput.value.trim()) v.thumbnail = thumbUrlInput.value.trim();
-                    // 2순위: 파일 업로드 (임시 미리보기)
-                    else if (thumbInput && thumbInput.files[0]) v.thumbnail = URL.createObjectURL(thumbInput.files[0]);
-                    else if (editingId) {
-                        // 수정 시 새 썸네일 안 넣으면 기존 썸네일 유지
-                        const cur = instructors.find(i => i.id === editingId);
-                        if (cur && cur.videos && cur.videos[k-1] && typeof cur.videos[k-1] === 'object' && cur.videos[k-1].thumbnail)
-                            v.thumbnail = cur.videos[k-1].thumbnail;
+                    // 2순위: 파일 업로드
+                    else if (thumbInput && thumbInput.files[0]) {
+                        v.thumbnail = await PickUpload.uploadFromInput(thumbInput, 'instructors');
+                        if (curThumb) oldFiles.push(curThumb);
                     }
-                    return v;
-                }).filter(v => v.url)
-            };
+                    // 수정 시 새 썸네일 안 넣으면 기존 썸네일 유지
+                    else if (curThumb) v.thumbnail = curThumb;
+                    if (v.url) videos.push(v);
+                }
 
-            const photoInput = document.getElementById('admin-photo');
-            if (photoInput.files[0]) newData.photo = URL.createObjectURL(photoInput.files[0]);
-            const profileFileInput = document.getElementById('admin-profile-file');
-            if (profileFileInput && profileFileInput.files[0]) newData.profileFile = URL.createObjectURL(profileFileInput.files[0]);
+                const newData = {
+                    name: name, title: document.getElementById('admin-title').value.trim(), intro: document.getElementById('admin-intro').value.trim(),
+                    profile: document.getElementById('admin-profile').value.trim(), phone: document.getElementById('admin-phone').value.trim(),
+                    phonePrivate: document.getElementById('admin-phone-private').value.trim(),
+                    categories: selectedCategories, specialTag: specialTag, type: type,
+                    photo: photo, profileFile: profileFile, videos: videos,
+                };
 
-            if (editingId) {
-                const idx = instructors.findIndex(i => i.id === editingId);
-                if (idx > -1) { Object.assign(instructors[idx], newData); alert("수정되었습니다!"); }
-            } else {
-                newData.id = instructors.length > 0 ? Math.max(...instructors.map(i => i.id)) + 1 : 1;
-                if (!newData.photo) newData.photo = "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=800";
-                instructors.unshift(newData); alert("등록되었습니다!");
+                btn.textContent = '저장 중...';
+                await PickDB.saveInstructor(newData, editingId);
+                oldFiles.forEach(url => PickUpload.removeByUrl(url));
+                await loadFromDB();
+                renderAll();
+                alert(editingId ? "수정되었습니다!" : "등록되었습니다!");
+                cancelAdminForm();
+            } catch (e) {
+                alert("저장에 실패했습니다.\n" + (e.message || ''));
+            } finally {
+                btn.disabled = false;
+                btn.textContent = btn.dataset.origText;
             }
-            cancelAdminForm(); renderFilters(); setTagFilter('all');
         }
 
         function startPosterEdit() {
@@ -3033,7 +3150,7 @@ function openPosterModal(id) {
             }
         }
 
-        function savePoster() {
+        async function savePoster() {
             const title = document.getElementById('admin-poster-title').value.trim();
             if (!title) { alert("제목을 입력해주세요."); return; }
 
@@ -3054,20 +3171,41 @@ function openPosterModal(id) {
                 zoomPw: document.getElementById('admin-poster-zoompw').value.trim(),
                 zoomNote: document.getElementById('admin-poster-zoomnote').value.trim()
             };
-            const fileInput = document.getElementById('admin-poster-image');
-            if (fileInput.files[0]) newData.image = URL.createObjectURL(fileInput.files[0]);
-            const mapInput = document.getElementById('admin-poster-mapimage');
-            if (mapInput.files[0]) newData.mapImage = URL.createObjectURL(mapInput.files[0]);
+            const curPoster = editingPosterId ? posters.find(p => p.id === editingPosterId) : null;
 
-            if (editingPosterId) {
-                const idx = posters.findIndex(p => p.id === editingPosterId);
-                if (idx > -1) { Object.assign(posters[idx], newData); alert("수정되었습니다."); }
-            } else {
-                newData.id = posters.length > 0 ? Math.max(...posters.map(p => p.id)) + 1 : 1;
-                if (!newData.image) newData.image = "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800";
-                posters.unshift(newData); alert("등록되었습니다.");
+            const btn = document.getElementById('admin-poster-submit-btn');
+            btn.disabled = true;
+            btn.dataset.origText = btn.textContent;
+            btn.textContent = '업로드 중...';
+            const oldFiles = [];
+            try {
+                const fileInput = document.getElementById('admin-poster-image');
+                if (fileInput.files[0]) {
+                    newData.image = await PickUpload.uploadFromInput(fileInput, 'posters');
+                    if (curPoster && curPoster.image) oldFiles.push(curPoster.image);
+                } else if (curPoster) newData.image = curPoster.image;
+
+                const mapInput = document.getElementById('admin-poster-mapimage');
+                if (mapInput.files[0]) {
+                    newData.mapImage = await PickUpload.uploadFromInput(mapInput, 'maps');
+                    if (curPoster && curPoster.mapImage) oldFiles.push(curPoster.mapImage);
+                } else if (curPoster) newData.mapImage = curPoster.mapImage;
+
+                if (!editingPosterId && !newData.image) newData.image = "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800";
+
+                btn.textContent = '저장 중...';
+                await PickDB.savePoster(newData, editingPosterId);
+                oldFiles.forEach(url => PickUpload.removeByUrl(url));
+                await loadFromDB();
+                renderAll();
+                alert(editingPosterId ? "수정되었습니다." : "등록되었습니다.");
+                cancelPosterAdminForm();
+            } catch (e) {
+                alert("저장에 실패했습니다.\n" + (e.message || ''));
+            } finally {
+                btn.disabled = false;
+                btn.textContent = btn.dataset.origText;
             }
-            cancelPosterAdminForm(); renderPosters();
         }
 
         window.onload = init;
