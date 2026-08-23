@@ -237,7 +237,7 @@
                     <button data-ptype="offline" onclick="filterPosters('offline')"
                             class="poster-filter-btn px-5 py-2 rounded-full text-[13px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary hover:ring-primary/30 transition-all duration-200"><i class="fas fa-map-marker-alt text-[11px] mr-1.5"></i>오프라인 강좌</button>
                     <button data-ptype="zoom" onclick="filterPosters('zoom')"
-                            class="poster-filter-btn px-5 py-2 rounded-full text-[13px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary hover:ring-primary/30 transition-all duration-200"><i class="fas fa-video text-[11px] mr-1.5"></i>줌 강좌</button>
+                            class="poster-filter-btn px-5 py-2 rounded-full text-[13px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary hover:ring-primary/30 transition-all duration-200"><i class="fas fa-video text-[11px] mr-1.5"></i>줌(온라인)강좌</button>
                 </div>
 
                 <div id="poster-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
@@ -1279,8 +1279,6 @@
             const isOff = (type === 'offline');
             if (b1) { b1.className = isOff ? on : off; b1.innerHTML = '<i class="fas fa-map-marker-alt text-[10px] mr-1"></i>오프라인'; }
             if (b2) { b2.className = !isOff ? on : off; b2.innerHTML = '<i class="fas fa-video text-[10px] mr-1"></i>줌'; }
-            // 줌이면 장소 숨김
-            document.getElementById('rr-c-location-wrap')?.classList.toggle('hidden', !isOff);
         }
         function submitRegRequest() {
             if (regReqType === 'instructor') {
@@ -1308,9 +1306,7 @@
                 fields = {
                     강사명: val('rr-i-name'),
                     분야: val('rr-i-categories'),
-                    대표문구: val('rr-i-title'),
                     소개글: val('rr-i-intro'),
-                    주요프로필: val('rr-i-profile'),
                     연락처: val('rr-i-phone'),
                     이메일: val('rr-i-email'),
                     첨부파일: fileNames('rr-i-files') || '없음',
@@ -1320,11 +1316,8 @@
                 fields = {
                     공고제목: val('rr-c-title'),
                     일시: val('rr-c-date'),
-                    장소: val('rr-c-location'),
                     주제: val('rr-c-topic'),
                     상세내용: val('rr-c-desc'),
-                    관련링크: val('rr-c-link'),
-                    포스터파일: fileNames('rr-c-image') || '없음',
                     신청자연락처: val('rr-c-phone'),
                     신청자이메일: val('rr-c-email'),
                 };
@@ -2558,7 +2551,7 @@
                     ? 'poster-filter-btn px-5 py-2 rounded-full text-[13px] font-bold bg-primary text-white shadow-[0_4px_14px_rgba(47,59,137,0.25)] transition-all duration-200'
                     : 'poster-filter-btn px-5 py-2 rounded-full text-[13px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary hover:ring-primary/30 transition-all duration-200';
                 if (btn.dataset.ptype === 'offline') btn.innerHTML = '<i class="fas fa-map-marker-alt text-[11px] mr-1.5"></i>오프라인 강좌';
-                else if (btn.dataset.ptype === 'zoom') btn.innerHTML = '<i class="fas fa-video text-[11px] mr-1.5"></i>줌 강좌';
+                else if (btn.dataset.ptype === 'zoom') btn.innerHTML = '<i class="fas fa-video text-[11px] mr-1.5"></i>줌(온라인)강좌';
                 else btn.innerHTML = '전체보기';
             });
             renderPosters();
@@ -3335,16 +3328,8 @@ function openPosterModal(id) {
                         <input type="text" id="rr-i-categories" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="예: AI세일즈, 법인영업 (쉼표로 구분)">
                     </div>
                     <div>
-                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">한줄 소개(타이틀)</label>
-                        <input type="text" id="rr-i-title" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="예: 보장분석 전문 강사입니다.">
-                    </div>
-                    <div>
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">강사 소개</label>
-                        <textarea id="rr-i-intro" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition h-24 resize-none" placeholder="강사 소개 내용을 입력해 주세요."></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">주요 프로필</label>
-                        <textarea id="rr-i-profile" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition h-24 resize-none" placeholder="경력, 이력 등 (엔터로 줄바꿈)"></textarea>
+                        <textarea id="rr-i-intro" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition h-24 resize-none" placeholder="간단한 소개를 입력해 주세요."></textarea>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -3380,25 +3365,13 @@ function openPosterModal(id) {
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">일시</label>
                         <input type="text" id="rr-c-date" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="예: 2026년 6월 20일 (토) 14:00 - 17:00">
                     </div>
-                    <div id="rr-c-location-wrap">
-                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">장소</label>
-                        <input type="text" id="rr-c-location" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="예: 강남구 테헤란로 대교육장">
-                    </div>
                     <div>
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">주제</label>
                         <input type="text" id="rr-c-topic" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="예: 실전 보장분석 노하우">
                     </div>
                     <div>
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">상세 안내</label>
-                        <textarea id="rr-c-desc" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition h-24 resize-none" placeholder="대상, 혜택, 세부 프로그램 등 (엔터로 줄바꿈)"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">링크</label>
-                        <input type="text" id="rr-c-link" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="예: 상세페이지/신청 폼 주소">
-                    </div>
-                    <div>
-                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">포스터 이미지</label>
-                        <input type="file" id="rr-c-image" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer ring-1 ring-gray-200 rounded-lg p-1.5">
+                        <textarea id="rr-c-desc" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition h-24 resize-none" placeholder="간단한 소개를 입력해 주세요."></textarea>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
