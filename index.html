@@ -1294,11 +1294,6 @@
             if (!agree || !agree.checked) { alert('개인정보 수집·이용에 동의해 주세요.'); return; }
 
             const val = id => (document.getElementById(id)?.value || '').trim();
-            const fileNames = id => {
-                const el = document.getElementById(id);
-                if (!el || !el.files || !el.files.length) return '';
-                return Array.from(el.files).map(f => f.name).join(', ');
-            };
 
             let applicant, fields;
             if (regReqType === 'instructor') {
@@ -1309,7 +1304,6 @@
                     소개글: val('rr-i-intro'),
                     연락처: val('rr-i-phone'),
                     이메일: val('rr-i-email'),
-                    첨부파일: fileNames('rr-i-files') || '없음',
                 };
             } else {
                 applicant = val('rr-c-phone');
@@ -1695,7 +1689,7 @@
                                  class="absolute inset-0 w-full h-full object-cover"></video>`
                         : `<img src="${bImg}" alt="${b.line2 || ''}"
                                  class="absolute inset-0 w-full h-full object-cover">`}
-                    <div class="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/25"></div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-black/45 via-black/25 to-black/5"></div>
                     <div class="absolute inset-0 flex items-center">
                         <div class="container mx-auto px-4 md:px-8 max-w-7xl w-full">
                           <div class="flex items-center justify-between gap-6">
@@ -3341,11 +3335,6 @@ function openPosterModal(id) {
                             <input type="email" id="rr-i-email" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="예: name@email.com">
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">강사 사진 / 영상 / 프로필 파일</label>
-                        <input type="file" id="rr-i-files" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer ring-1 ring-gray-200 rounded-lg p-1.5">
-                        <p class="text-[11px] text-gray-400 mt-1.5">사진, 강의 영상, 프로필 파일 등을 함께 첨부해 주세요.</p>
-                    </div>
                 </div>
 
                 <!-- 강좌 등록 요청 폼 -->
@@ -3370,7 +3359,7 @@ function openPosterModal(id) {
                         <input type="text" id="rr-c-topic" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="예: 실전 보장분석 노하우">
                     </div>
                     <div>
-                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">상세 안내</label>
+                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">강좌 소개</label>
                         <textarea id="rr-c-desc" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition h-24 resize-none" placeholder="간단한 소개를 입력해 주세요."></textarea>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
