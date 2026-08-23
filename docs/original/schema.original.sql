@@ -1,0 +1,229 @@
+-- ============================================================
+-- FP파트너즈 강사 Pick — Supabase 스키마
+-- 버전 v1.0 / 2026-08-19
+-- 실행 방법: Supabase 대시보드 > SQL Editor 에 전체 붙여넣기 후 RUN
+-- 주의: 프로젝트는 반드시 서울 리전(ap-northeast-2)으로 생성할 것
+-- ============================================================
+
+
+-- ============================================================
+-- 1. 분야 (categories)
+-- ============================================================
+create table public.categories (
+  id          bigserial primary key,
+  name        text not null unique,
+  sort_order  int not null default 0,
+  is_active   boolean not null default true
+);
+
+insert into public.categories (name, sort_order) values
+  ('FPShip', 1), ('메디컬화법', 2), ('약관&보상&고지의무', 3), ('실손보험', 4),
+  ('종신&정기보험', 5), ('변액보험', 6), ('연금&저축성보험', 7), ('자동차&운전자보험', 8),
+  ('배상책임&화재보험', 9), ('치아&어린이&치매보험', 10), ('세무설계', 11), ('초회상담(AP)', 12),
+  ('상담프로세스', 13), ('상품영업전략', 14), ('DB영업', 15), ('AI세일즈', 16),
+  ('법인영업', 17), ('매니저 육성', 18);
+
+
+-- ============================================================
+-- 2. 강사 (instructors)
+--    phone_public  : 화면 노출용. 제휴강사는 본인 휴대폰, 추천강사는 대표번호
+--    phone_private : 관리자 전용. 화면에 절대 노출되지 않음
+-- ============================================================
+create table public.instructors (
+  id                bigserial primary key,
+  name              text not null,
+  type              text not null default '추천' check (type in ('추천', '제휴')),
+  title             text,
+  intro             text,
+  profile           text,
+  categories        text[] not null default '{}',
+  phone_public      text,
+  phone_private     text,
+  email             text,
+  photo_url         text,
+  profile_file_url  text,
+  sort_order        int not null default 0,
+  is_pinned         boolean not null default false,
+  is_visible        boolean not null default true,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
+);
+
+create index idx_instructors_order on public.instructors (is_pinned desc, sort_order asc, id asc);
+
+
+-- ============================================================
+-- 3. 강사 영상 (instructor_videos)
+-- ============================================================
+create table public.instructor_videos (
+  id             bigserial primary key,
+  instructor_id  bigint not null references public.instructors(id) on delete cascade,
+  url            text not null,
+  title          text,
+  thumbnail_url  text,
+  sort_order     int not null default 0
+);
+
+create index idx_videos_instructor on public.instructor_videos (instructor_id, sort_order);
+
+
+-- ============================================================
+-- 4. 공고 (posters)
+-- ============================================================
+create table public.posters (
+  id             bigserial primary key,
+  ptype          text not null default 'offline' check (ptype in ('offline', 'zoom')),
+  title          text not null,
+  image_url      text,
+  event_date     text,
+  location       text,
+  topic          text,
+  description    text,
+  link           text,
+  apply_link     text,
+  map_image_url  text,
+  map_url        text,
+  route          text,
+  sort_order     int not null default 0,
+  is_visible     boolean not null default true,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+create index idx_posters_order on public.posters (sort_order asc, id desc);
+
+
+-- ============================================================
+-- 5. 상단 광고 (top_ads)
+-- ============================================================
+create table public.top_ads (
+  id                bigserial primary key,
+  slot              int not null default 1,
+  image_url         text,
+  image_mobile_url  text,
+  bg                text,
+  link              text,
+  is_visible        boolean not null default true,
+  updated_at        timestamptz not null default now()
+);
+
+
+-- ============================================================
+-- 6. 메인 배너 (banners)
+-- ============================================================
+create table public.banners (
+  id                bigserial primary key,
+  slot              int not null default 1,
+  image_url         text,
+  image_mobile_url  text,
+  video_url         text,
+  video_mobile_url  text,
+  line1             text,
+  line2             text,
+  sub1              text,
+  sub2              text,
+  btn_text          text,
+  link              text,
+  is_visible        boolean not null default true,
+  updated_at        timestamptz not null default now()
+);
+
+
+-- ============================================================
+-- 7. updated_at 자동 갱신
+-- ============================================================
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end $$;
+
+create trigger trg_instructors_touch before update on public.instructors
+  for each row execute function public.touch_updated_at();
+create trigger trg_posters_touch before update on public.posters
+  for each row execute function public.touch_updated_at();
+create trigger trg_top_ads_touch before update on public.top_ads
+  for each row execute function public.touch_updated_at();
+create trigger trg_banners_touch before update on public.banners
+  for each row execute function public.touch_updated_at();
+
+
+-- ============================================================
+-- 8. RLS — 조회는 공개, 저장·수정·삭제는 로그인한 관리자만
+-- ============================================================
+alter table public.categories        enable row level security;
+alter table public.instructors       enable row level security;
+alter table public.instructor_videos enable row level security;
+alter table public.posters           enable row level security;
+alter table public.top_ads           enable row level security;
+alter table public.banners           enable row level security;
+
+-- 공개 조회 (instructors 는 제외 — 아래 뷰로만 공개)
+create policy pub_read_categories on public.categories
+  for select to anon, authenticated using (true);
+create policy pub_read_videos on public.instructor_videos
+  for select to anon, authenticated using (true);
+create policy pub_read_posters on public.posters
+  for select to anon, authenticated using (is_visible);
+create policy pub_read_top_ads on public.top_ads
+  for select to anon, authenticated using (is_visible);
+create policy pub_read_banners on public.banners
+  for select to anon, authenticated using (is_visible);
+
+-- instructors 본체는 관리자만 직접 조회 가능 (phone_private 보호)
+create policy adm_read_instructors on public.instructors
+  for select to authenticated using (true);
+
+-- 관리자 쓰기 권한
+create policy adm_write_categories on public.categories
+  for all to authenticated using (true) with check (true);
+create policy adm_write_instructors on public.instructors
+  for all to authenticated using (true) with check (true);
+create policy adm_write_videos on public.instructor_videos
+  for all to authenticated using (true) with check (true);
+create policy adm_write_posters on public.posters
+  for all to authenticated using (true) with check (true);
+create policy adm_write_top_ads on public.top_ads
+  for all to authenticated using (true) with check (true);
+create policy adm_write_banners on public.banners
+  for all to authenticated using (true) with check (true);
+
+
+-- ============================================================
+-- 9. 공개용 강사 뷰 — phone_private 를 물리적으로 제외
+--    이용자 화면은 반드시 이 뷰를 조회할 것
+-- ============================================================
+create view public.instructors_public as
+  select
+    id, name, type, title, intro, profile, categories,
+    phone_public, photo_url, profile_file_url,
+    sort_order, is_pinned
+  from public.instructors
+  where is_visible = true;
+
+grant select on public.instructors_public to anon, authenticated;
+
+
+-- ============================================================
+-- 10. Storage 버킷
+--     대시보드 Storage 메뉴에서 'pick-media' 버킷을 Public 으로 생성한 뒤 실행
+--     폴더 구성 권장: instructors/ profiles/ posters/ maps/ banners/ ads/
+-- ============================================================
+create policy pub_read_media on storage.objects
+  for select to anon, authenticated using (bucket_id = 'pick-media');
+
+create policy adm_write_media on storage.objects
+  for insert to authenticated with check (bucket_id = 'pick-media');
+
+create policy adm_update_media on storage.objects
+  for update to authenticated using (bucket_id = 'pick-media');
+
+create policy adm_delete_media on storage.objects
+  for delete to authenticated using (bucket_id = 'pick-media');
+
+
+-- ============================================================
+-- 끝. 관리자 계정은 Authentication > Users 에서 직접 생성할 것
+-- (이메일 가입은 비활성화 권장 — 관리자 외 가입 차단)
+-- ============================================================

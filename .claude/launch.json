@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pick-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "tools/server.mjs"
+      ],
+      "port": 5173
+    }
+  ]
+}

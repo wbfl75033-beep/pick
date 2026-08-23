@@ -1,0 +1,9 @@
+# 배포에서 제외 — 공개되면 안 되는 내부 자료
+docs/
+tools/
+db/
+.claude/
+README.md
+CLAUDE.md
+package.json
+node_modules/

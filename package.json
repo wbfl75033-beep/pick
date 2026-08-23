@@ -1,0 +1,10 @@
+{
+  "name": "fppartners-pick",
+  "private": true,
+  "version": "1.0.0",
+  "description": "FP파트너즈 강사 Pick — Supabase + Vercel",
+  "scripts": {
+    "dev": "node tools/server.mjs",
+    "seed": "node tools/extract.mjs && node tools/seed.mjs"
+  }
+}
