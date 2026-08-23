@@ -73,7 +73,7 @@
     bg: r.bg || '', link: r.link || '',
   });
 
-  const toBannerSubtext = r => ({ id: r.id, slot: r.slot, variantOrder: r.variant_order, sub1: r.sub1 || '', sub2: r.sub2 || '' });
+  const toBannerSubtext = r => ({ id: r.id, slot: r.slot, variantOrder: r.variant_order, sub1: r.sub1 || '', sub2: r.sub2 || '', color: r.color || '' });
 
   /* ---------- 화면 객체 → DB row 변환 ---------- */
   const fromInstructor = o => ({
@@ -265,7 +265,7 @@
       const variants = (b.subVariants && b.subVariants.length) ? b.subVariants : [];
       for (let v = 0; v < 3; v++) {
         const s = variants[v] || {};
-        rows.push({ slot: i + 1, variant_order: v + 1, sub1: s.sub1 || null, sub2: s.sub2 || null });
+        rows.push({ slot: i + 1, variant_order: v + 1, sub1: s.sub1 || null, sub2: s.sub2 || null, color: s.color || null });
       }
     });
     if (!rows.length) return;

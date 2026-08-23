@@ -295,3 +295,10 @@ insert into public.banner_subtexts (slot, variant_order, sub1, sub2) values
   (2, 1, '강사 섭외 스트레스를 없애드립니다.', '강의영상을 먼저 확인하고 선택합니다.'),
   (2, 2, '', ''),
   (2, 3, '', '');
+
+
+-- ============================================================
+-- 13. [추가] 배너 오른쪽 보조문구 3개마다 글자 색 지정
+-- ============================================================
+alter table public.banner_subtexts
+  add column if not exists color text;

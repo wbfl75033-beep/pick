@@ -1895,9 +1895,10 @@
                         ${[0, 1, 2].map(v => {
                             const s = (b.subVariants && b.subVariants[v]) || { sub1: '', sub2: '' };
                             return `
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 items-center">
                             <input type="text" data-bnsub="sub1" data-i="${i}" data-v="${v}" value="${(s.sub1||'').replace(/"/g,'&quot;')}" placeholder="${v+1}번째 1줄" class="flex-1 p-2.5 rounded-lg ring-1 ring-gray-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary/40">
                             <input type="text" data-bnsub="sub2" data-i="${i}" data-v="${v}" value="${(s.sub2||'').replace(/"/g,'&quot;')}" placeholder="${v+1}번째 2줄" class="flex-1 p-2.5 rounded-lg ring-1 ring-gray-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary/40">
+                            <input type="color" data-bnsub="color" data-i="${i}" data-v="${v}" value="${s.color || '#ffffff'}" title="이 문구 글자색" class="w-9 h-9 flex-shrink-0 rounded-lg ring-1 ring-gray-200 cursor-pointer p-0.5 bg-white">
                         </div>`;
                         }).join('')}
                     </div>`;
@@ -2026,8 +2027,8 @@
                 const activeSub = track.children[bannerIdx]?.querySelector('.banner-sub');
                 if (activeSub && cur) {
                     const ps = activeSub.querySelectorAll('p');
-                    if (ps[0]) ps[0].textContent = cur.sub1 || '';
-                    if (ps[1]) ps[1].textContent = cur.sub2 || '';
+                    if (ps[0]) { ps[0].textContent = cur.sub1 || ''; ps[0].style.color = cur.color || ''; }
+                    if (ps[1]) { ps[1].textContent = cur.sub2 || ''; ps[1].style.color = cur.color || ''; }
                 }
             }
 
@@ -2126,7 +2127,7 @@
                         const slot = i + 1;
                         const variants = subs.filter(s => s.slot === slot)
                             .sort((a, c) => a.variantOrder - c.variantOrder)
-                            .map(s => ({ sub1: s.sub1, sub2: s.sub2 }));
+                            .map(s => ({ sub1: s.sub1, sub2: s.sub2, color: s.color || '' }));
                         while (variants.length < 3) variants.push({ sub1: '', sub2: '' });
                         b.subVariants = variants;
                     });
