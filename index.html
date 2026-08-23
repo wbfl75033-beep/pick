@@ -2271,7 +2271,10 @@
     // 1. 기존 리스트 비우기 (복제 방지)
     container.innerHTML = '';
 
-    let filtered = instructors.slice();
+    // 관리자 화면은 phone_private 조회를 위해 본체 테이블(instructors)을 쓰는데,
+    // 그 테이블은 is_visible 필터가 없어 삭제(숨김 처리)된 강사도 그대로 내려온다.
+    // 화면 목록에서는 숨김 처리된 강사를 항상 제외한다.
+    let filtered = instructors.filter(inst => inst.isVisible !== false);
 
     // 2. 카테고리 필터링 (다중 선택 = AND 조건: 선택 분야를 모두 가진 강사만 노출)
     if (selectedCategories.length > 0) {
