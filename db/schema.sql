@@ -254,3 +254,35 @@ alter table public.posters
 --          link, apply_link, map_image_url, map_url, route, sort_order
 --   from public.posters where is_visible = true;
 -- grant select on public.posters_public to anon, authenticated;
+
+
+-- ============================================================
+-- 12. [추가] 메인 배너 오른쪽 보조문구 순환 세트
+--     기존 banners.sub1/sub2 는 배너 슬라이드(이미지)마다 고정이었는데,
+--     "왼쪽 문구는 배너별 그대로 두고, 오른쪽 문구만 배너 전환마다
+--     별도로 3개를 순환 표시"하도록 요청받아 배너 슬라이드와 무관한
+--     별도 테이블로 분리함. index.html/js/db.js 에서 사용.
+-- ============================================================
+create table if not exists public.banner_subtexts (
+  id          bigserial primary key,
+  sort_order  int not null default 1,
+  sub1        text,
+  sub2        text,
+  updated_at  timestamptz not null default now()
+);
+
+alter table public.banner_subtexts enable row level security;
+
+create policy pub_read_banner_subtexts on public.banner_subtexts
+  for select to anon, authenticated using (true);
+create policy adm_write_banner_subtexts on public.banner_subtexts
+  for all to authenticated using (true) with check (true);
+
+create trigger trg_banner_subtexts_touch before update on public.banner_subtexts
+  for each row execute function public.touch_updated_at();
+
+-- 기존 배너 2개의 오른쪽 문구를 초기값으로 이관 (필요 없으면 지우고 관리자 화면에서 새로 입력)
+insert into public.banner_subtexts (sort_order, sub1, sub2) values
+  (1, '이제 대한민국 유명 보험 강좌를', '한곳에서 확인하실 수 있습니다.'),
+  (2, '강사 섭외 스트레스를 없애드립니다.', '강의영상을 먼저 확인하고 선택합니다.'),
+  (3, '', '');
