@@ -711,6 +711,9 @@
                     <div class="w-full md:w-1/2 min-w-0 space-y-4">
                         <img id="poster-modal-img" src="" alt="세미나 포스터"
                              class="block w-full h-auto rounded-sm border border-gray-200 bg-gray-50 object-contain">
+                        <p id="poster-modal-link-hint" class="hidden text-[11px] text-gray-400 text-center -mt-2">
+                            <i class="fas fa-arrow-up-right-from-square mr-1"></i>포스터 클릭 시 상세페이지로 이동합니다
+                        </p>
 
                         <!-- 일시 / 장소 / 주제 (포스터 바로 아래) -->
                         <div class="bg-gray-50 rounded-sm p-4 border border-gray-200 space-y-3">
@@ -2816,15 +2819,18 @@ function openPosterModal(id) {
     if (titleEl) titleEl.textContent = poster.title;
 
     const imgEl = document.getElementById('poster-modal-img');
+    const linkHintEl = document.getElementById('poster-modal-link-hint');
     if (imgEl) {
         imgEl.src = poster.image;
         if (poster.link) {
             imgEl.style.cursor = 'pointer';
             imgEl.title = '클릭하면 상세 페이지로 이동합니다';
             imgEl.onclick = () => window.open(poster.link, '_blank', 'noopener');
+            if (linkHintEl) linkHintEl.classList.remove('hidden');
         } else {
             imgEl.style.cursor = 'default';
             imgEl.onclick = null;
+            if (linkHintEl) linkHintEl.classList.add('hidden');
         }
     }
 
