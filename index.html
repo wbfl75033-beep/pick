@@ -634,7 +634,7 @@
                         <p id="modal-intro" class="text-[14.5px] text-gray-600 leading-[1.95] break-keep mb-8 whitespace-pre-line">소개문구</p>
 
                         <!-- 주요 프로필 (유리 느낌: 옅은 그라데이션 테두리 + 반투명 블러 배경) -->
-                        <div class="rounded-2xl p-[1px] mb-6" style="background: linear-gradient(135deg, rgba(47,59,137,0.18), rgba(154,168,238,0.08), rgba(47,59,137,0.12));">
+                        <div id="modal-profile-box" class="rounded-2xl p-[1px] mb-6" style="background: linear-gradient(135deg, rgba(47,59,137,0.18), rgba(154,168,238,0.08), rgba(47,59,137,0.12));">
                             <div class="rounded-2xl bg-white/20 backdrop-blur-md shadow-[0_4px_20px_rgba(47,59,137,0.04)] p-5 md:p-6">
                                 <div class="flex items-center justify-between mb-3">
                                     <h5 class="text-[15px] font-bold text-gray-900 flex items-center">
@@ -2612,11 +2612,14 @@
     const typeStr = String(inst.type || inst.specialTag || '');
     const isRec = typeStr.includes('추천');
     const theme = isRec
-        ? { bg: 'linear-gradient(180deg, #d9f0e3 0%, #ffffff 70%)', badge: 'bg-emerald-700', text: 'text-emerald-700', titleGrad: 'bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-300 bg-clip-text text-transparent', icon: 'text-emerald-600', btn: 'bg-emerald-600', ribbon1: 'linear-gradient(90deg, #047857, #10b981)', ribbon2: 'linear-gradient(90deg, #10b981, #6ee7b7)' }
-        : { bg: 'linear-gradient(180deg, #dfe4fa 0%, #ffffff 70%)', badge: 'bg-[#3a4ba0]', text: 'text-blue-600',    titleGrad: 'bg-gradient-to-r from-[#2f3b89] via-[#5a6ad0] to-[#9aa8ee] bg-clip-text text-transparent', icon: 'text-blue-500',    btn: 'bg-primary',     ribbon1: 'linear-gradient(90deg, #2f3b89, #5a6ad0)', ribbon2: 'linear-gradient(90deg, #5a6ad0, #9aa8ee)' };
+        ? { bg: 'linear-gradient(180deg, #d9f0e3 0%, #ffffff 70%)', badge: 'bg-emerald-700', text: 'text-emerald-700', titleGrad: 'bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-300 bg-clip-text text-transparent', icon: 'text-emerald-600', btn: 'bg-emerald-600', ribbon1: 'linear-gradient(90deg, #047857, #10b981)', ribbon2: 'linear-gradient(90deg, #10b981, #6ee7b7)', profileBorder: 'linear-gradient(135deg, rgba(4,120,87,0.20), rgba(110,231,183,0.08), rgba(16,185,129,0.14))' }
+        : { bg: 'linear-gradient(180deg, #dfe4fa 0%, #ffffff 70%)', badge: 'bg-[#3a4ba0]', text: 'text-blue-600',    titleGrad: 'bg-gradient-to-r from-[#2f3b89] via-[#5a6ad0] to-[#9aa8ee] bg-clip-text text-transparent', icon: 'text-blue-500',    btn: 'bg-primary',     ribbon1: 'linear-gradient(90deg, #2f3b89, #5a6ad0)', ribbon2: 'linear-gradient(90deg, #5a6ad0, #9aa8ee)', profileBorder: 'linear-gradient(135deg, rgba(47,59,137,0.18), rgba(154,168,238,0.08), rgba(47,59,137,0.12))' };
 
     const bodyEl = document.getElementById('modal-body');
     if (bodyEl) bodyEl.style.background = theme.bg;
+
+    const profileBoxEl = document.getElementById('modal-profile-box');
+    if (profileBoxEl) profileBoxEl.style.background = theme.profileBorder;
 
    const modalNameEl = document.getElementById('modal-name');
     if (modalNameEl) {
