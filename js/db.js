@@ -57,6 +57,7 @@
     zoomPw: r.zoom_pw || '',
     zoomNote: r.zoom_note || '',
     sortOrder: r.sort_order,
+    isVisible: r.is_visible,
   });
 
   const toBanner = r => ({
