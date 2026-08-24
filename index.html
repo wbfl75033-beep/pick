@@ -721,7 +721,7 @@
                                 <p class="text-[11px] font-bold text-gray-500 mb-1">일시</p>
                                 <p id="poster-modal-date" class="text-sm text-gray-800 font-medium"></p>
                             </div>
-                            <div class="border-t border-gray-200 pt-3">
+                            <div id="poster-modal-location-row" class="border-t border-gray-200 pt-3">
                                 <p class="text-[11px] font-bold text-gray-500 mb-1">장소</p>
                                 <p id="poster-modal-location" class="text-sm text-gray-800 font-medium"></p>
                             </div>
@@ -2839,6 +2839,8 @@ function openPosterModal(id) {
 
     const locEl = document.getElementById('poster-modal-location');
     if (locEl) locEl.textContent = poster.location;
+    const locRowEl = document.getElementById('poster-modal-location-row');
+    if (locRowEl) locRowEl.classList.toggle('hidden', poster.ptype === 'zoom');
 
     const topicEl = document.getElementById('poster-modal-topic');
     if (topicEl) topicEl.textContent = poster.topic || '';
