@@ -2395,8 +2395,9 @@
     }
     // default는 배열 원래 순서(관리자 지정 순서) 유지
 
-    // ===== 고정 핀: 핀 꽂은 강사를 최상단으로 (핀 순서 유지) =====
-    if (pinnedIds.length > 0) {
+    // ===== 고정 핀: 기본순일 때만 핀 꽂은 강사를 최상단으로 (핀 순서 유지) =====
+    // 최신순·이름순에서는 핀을 강제로 올리지 않고 해당 정렬 순서 그대로 노출
+    if (currentSort === 'default' && pinnedIds.length > 0) {
         const pinned = [];
         pinnedIds.forEach(pid => {
             const found = filtered.find(i => i.id === pid);
