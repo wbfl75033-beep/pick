@@ -336,15 +336,11 @@
                         <label class="block text-sm font-bold text-gray-800 mb-4">강사 태그</label>
                         <div class="flex flex-wrap gap-5">
                             <label class="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer">
-                                <input type="radio" name="admin_tag" value="none" checked class="text-primary w-4 h-4 focus:ring-primary">
-                                <span>선택안함</span>
-                            </label>
-                            <label class="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer">
                                 <input type="radio" name="admin_tag" value="제휴강사" class="text-primary w-4 h-4 focus:ring-primary">
                                 <span>제휴강사</span>
                             </label>
                             <label class="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer">
-                                <input type="radio" name="admin_tag" value="추천강사" class="text-primary w-4 h-4 focus:ring-primary">
+                                <input type="radio" name="admin_tag" value="추천강사" checked class="text-primary w-4 h-4 focus:ring-primary">
                                 <span>추천강사</span>
                             </label>
                         </div>
@@ -383,10 +379,6 @@
                         <div class="flex flex-col md:flex-row md:items-center pt-4 border-t border-gray-100">
                             <label class="w-32 text-sm font-bold text-gray-800 mb-2 md:mb-0">연락처</label>
                             <input type="text" id="admin-phone" class="flex-1 p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="예: 02-525-1686">
-                        </div>
-                        <div class="flex flex-col md:flex-row md:items-center pt-4 border-t border-gray-100">
-                            <label class="w-32 text-sm font-bold text-gray-800 mb-2 md:mb-0">연락처(관리자용)<br><span class="text-[11px] font-normal text-gray-400">비공개</span></label>
-                            <input type="text" id="admin-phone-private" class="flex-1 p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="관리자만 볼 수 있는 연락처 (이용자 화면에 노출되지 않음)">
                         </div>
                         <div class="pt-4 border-t border-gray-100">
                             <label class="block text-sm font-bold text-gray-800 mb-3">영상 등록 (임베드 URL 최대 3개)</label>
@@ -1274,7 +1266,7 @@
                 if (itemsEl) itemsEl.textContent = '강사명, 연락처, 이메일';
                 if (purposeEl) purposeEl.textContent = '강사 등록 검토 및 등록 안내 연락';
             } else {
-                if (itemsEl) itemsEl.textContent = '공고 제목, 신청자 연락처, 이메일';
+                if (itemsEl) itemsEl.textContent = '공고 제목, 연락처, 이메일';
                 if (purposeEl) purposeEl.textContent = '강좌(공고) 등록 검토 및 등록 안내 연락';
             }
             const agree = document.getElementById('regreq-agree'); if (agree) agree.checked = false;
@@ -1297,7 +1289,7 @@
             } else {
                 const title = (document.getElementById('rr-c-title')?.value || '').trim();
                 const phone = (document.getElementById('rr-c-phone')?.value || '').trim();
-                if (!title || !phone) { alert('공고 제목과 신청자 연락처는 필수입니다.'); return; }
+                if (!title || !phone) { alert('공고 제목과 연락처는 필수입니다.'); return; }
             }
             const agree = document.getElementById('regreq-agree');
             if (!agree || !agree.checked) { alert('개인정보 수집·이용에 동의해 주세요.'); return; }
@@ -2966,7 +2958,6 @@ function openPosterModal(id) {
             document.getElementById('admin-name').value = inst.name; document.getElementById('admin-title').value = inst.title;
             document.getElementById('admin-intro').value = inst.intro; document.getElementById('admin-profile').value = inst.profile;
             document.getElementById('admin-phone').value = inst.phone;
-            document.getElementById('admin-phone-private').value = inst.phonePrivate || '';
             for (let k = 0; k < 3; k++) {
                 const v = inst.videos[k];
                 const url = v ? (typeof v === 'string' ? v : (v.url || '')) : '';
@@ -2978,8 +2969,9 @@ function openPosterModal(id) {
                 const th = document.getElementById('admin-video-thumb-' + (k+1)); if (th) th.value = '';
             }
             document.querySelectorAll('input[name="category"]').forEach(cb => cb.checked = inst.categories.includes(cb.value));
-            const tagRadio = document.querySelector(`input[name="admin_tag"][value="${inst.specialTag}"]`);
-            if (tagRadio) tagRadio.checked = true; else document.querySelector(`input[name="admin_tag"][value="none"]`).checked = true;
+            const tagValue = inst.type === '제휴' ? '제휴강사' : '추천강사';
+            const tagRadio = document.querySelector(`input[name="admin_tag"][value="${tagValue}"]`);
+            if (tagRadio) tagRadio.checked = true;
             document.getElementById('admin-photo').value = '';
             const pf = document.getElementById('admin-profile-file'); if (pf) pf.value = '';
             
@@ -2992,9 +2984,9 @@ function openPosterModal(id) {
             editingId = null;
             document.getElementById('admin-form-title').textContent = "강사 등록";
             const btn = document.getElementById('admin-submit-btn'); btn.textContent = "등록하기"; btn.classList.replace('bg-green-600', 'bg-primary');
-            ['name','title','intro','profile','phone','phone-private','photo','profile-file','video-1','video-2','video-3','video-title-1','video-title-2','video-title-3','video-thumb-1','video-thumb-2','video-thumb-3','video-thumburl-1','video-thumburl-2','video-thumburl-3'].forEach(id => { const el = document.getElementById('admin-'+id); if (el) el.value = ''; });
+            ['name','title','intro','profile','phone','photo','profile-file','video-1','video-2','video-3','video-title-1','video-title-2','video-title-3','video-thumb-1','video-thumb-2','video-thumb-3','video-thumburl-1','video-thumburl-2','video-thumburl-3'].forEach(id => { const el = document.getElementById('admin-'+id); if (el) el.value = ''; });
             document.querySelectorAll('input[name="category"]').forEach(cb => cb.checked = false);
-            const defaultTag = document.querySelector('input[name="admin_tag"][value="none"]'); if(defaultTag) defaultTag.checked = true;
+            const defaultTag = document.querySelector('input[name="admin_tag"][value="추천강사"]'); if(defaultTag) defaultTag.checked = true;
         }
 
         function cancelAdminForm() { resetAdminFormUI(); switchTab('landing'); }
@@ -3006,8 +2998,7 @@ function openPosterModal(id) {
             const selectedCategories = Array.from(categoryNodes).map(cb => cb.value);
             if (selectedCategories.length === 0) { alert("분야를 최소 1개 이상 선택해주세요."); return; }
 
-            const specialTag = document.querySelector('input[name="admin_tag"]:checked')?.value || 'none';
-            // DB type 컬럼은 '추천'/'제휴'만 허용. '선택안함'은 '추천'으로 저장 (인수인계서 3장 기본값)
+            const specialTag = document.querySelector('input[name="admin_tag"]:checked')?.value || '추천강사';
             const type = specialTag.includes('제휴') ? '제휴' : '추천';
             const cur = editingId ? instructors.find(i => i.id === editingId) : null;
 
@@ -3056,7 +3047,6 @@ function openPosterModal(id) {
                 const newData = {
                     name: name, title: document.getElementById('admin-title').value.trim(), intro: document.getElementById('admin-intro').value.trim(),
                     profile: document.getElementById('admin-profile').value.trim(), phone: document.getElementById('admin-phone').value.trim(),
-                    phonePrivate: document.getElementById('admin-phone-private').value.trim(),
                     categories: selectedCategories, specialTag: specialTag, type: type,
                     photo: photo, profileFile: profileFile, videos: videos,
                 };
@@ -3423,7 +3413,7 @@ function openPosterModal(id) {
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-[13px] font-bold text-gray-700 mb-1.5">신청자 연락처 <span class="text-red-400">*</span></label>
+                            <label class="block text-[13px] font-bold text-gray-700 mb-1.5">연락처 <span class="text-red-400">*</span></label>
                             <input type="text" id="rr-c-phone" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="예: 010-0000-0000">
                         </div>
                         <div>
