@@ -257,9 +257,9 @@
                     <button data-ptype="all" onclick="filterPosters('all')"
                             class="poster-filter-btn px-5 py-2 rounded-full text-[13px] font-bold bg-primary text-white shadow-[0_4px_14px_rgba(47,59,137,0.25)] transition-all duration-200">전체보기</button>
                     <button data-ptype="offline" onclick="filterPosters('offline')"
-                            class="poster-filter-btn px-5 py-2 rounded-full text-[13px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary hover:ring-primary/30 transition-all duration-200"><i class="fas fa-map-marker-alt text-[11px] mr-1.5"></i>오프라인 강좌</button>
+                            class="poster-filter-btn px-5 py-2 rounded-full text-[13px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary hover:ring-primary/30 transition-all duration-200"><i class="fas fa-map-marker-alt text-[11px] mr-1.5"></i>오프라인</button>
                     <button data-ptype="zoom" onclick="filterPosters('zoom')"
-                            class="poster-filter-btn px-5 py-2 rounded-full text-[13px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary hover:ring-primary/30 transition-all duration-200"><i class="fas fa-video text-[11px] mr-1.5"></i>줌(라이브)강좌</button>
+                            class="poster-filter-btn px-5 py-2 rounded-full text-[13px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary hover:ring-primary/30 transition-all duration-200"><i class="fas fa-video text-[11px] mr-1.5"></i>줌(라이브)</button>
                 </div>
 
                 <div id="poster-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
@@ -1280,7 +1280,7 @@
                 if (itemsEl) itemsEl.textContent = '강사명, 연락처, 이메일';
                 if (purposeEl) purposeEl.textContent = '강사 등록 검토 및 등록 안내 연락';
             } else {
-                if (itemsEl) itemsEl.textContent = '공고 제목, 연락처, 이메일';
+                if (itemsEl) itemsEl.textContent = '신청자명, 공고 제목, 연락처, 이메일';
                 if (purposeEl) purposeEl.textContent = '강좌(공고) 등록 검토 및 등록 안내 연락';
             }
             const agree = document.getElementById('regreq-agree'); if (agree) agree.checked = false;
@@ -1293,7 +1293,7 @@
             const off = 'px-4 py-2 rounded-full text-[12.5px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary transition';
             const isOff = (type === 'offline');
             if (b1) { b1.className = isOff ? on : off; b1.innerHTML = '<i class="fas fa-map-marker-alt text-[10px] mr-1"></i>오프라인'; }
-            if (b2) { b2.className = !isOff ? on : off; b2.innerHTML = '<i class="fas fa-video text-[10px] mr-1"></i>줌'; }
+            if (b2) { b2.className = !isOff ? on : off; b2.innerHTML = '<i class="fas fa-video text-[10px] mr-1"></i>줌(라이브)'; }
         }
         function submitRegRequest() {
             if (regReqType === 'instructor') {
@@ -1301,9 +1301,10 @@
                 const phone = (document.getElementById('rr-i-phone')?.value || '').trim();
                 if (!name || !phone) { alert('강사명과 연락처는 필수입니다.'); return; }
             } else {
+                const rname = (document.getElementById('rr-c-name')?.value || '').trim();
                 const title = (document.getElementById('rr-c-title')?.value || '').trim();
                 const phone = (document.getElementById('rr-c-phone')?.value || '').trim();
-                if (!title || !phone) { alert('공고 제목과 연락처는 필수입니다.'); return; }
+                if (!rname || !title || !phone) { alert('신청자명, 공고 제목, 연락처는 필수입니다.'); return; }
             }
             const agree = document.getElementById('regreq-agree');
             if (!agree || !agree.checked) { alert('개인정보 수집·이용에 동의해 주세요.'); return; }
@@ -1321,8 +1322,9 @@
                     이메일: val('rr-i-email'),
                 };
             } else {
-                applicant = val('rr-c-phone');
+                applicant = val('rr-c-name');
                 fields = {
+                    신청자명: val('rr-c-name'),
                     공고제목: val('rr-c-title'),
                     일시: val('rr-c-date'),
                     주제: val('rr-c-topic'),
@@ -2609,8 +2611,8 @@
                 btn.className = active
                     ? 'poster-filter-btn px-5 py-2 rounded-full text-[13px] font-bold bg-primary text-white shadow-[0_4px_14px_rgba(47,59,137,0.25)] transition-all duration-200'
                     : 'poster-filter-btn px-5 py-2 rounded-full text-[13px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary hover:ring-primary/30 transition-all duration-200';
-                if (btn.dataset.ptype === 'offline') btn.innerHTML = '<i class="fas fa-map-marker-alt text-[11px] mr-1.5"></i>오프라인 강좌';
-                else if (btn.dataset.ptype === 'zoom') btn.innerHTML = '<i class="fas fa-video text-[11px] mr-1.5"></i>줌(라이브)강좌';
+                if (btn.dataset.ptype === 'offline') btn.innerHTML = '<i class="fas fa-map-marker-alt text-[11px] mr-1.5"></i>오프라인';
+                else if (btn.dataset.ptype === 'zoom') btn.innerHTML = '<i class="fas fa-video text-[11px] mr-1.5"></i>줌(라이브)';
                 else btn.innerHTML = '전체보기';
             });
             renderPosters();
@@ -3414,8 +3416,12 @@ function openPosterModal(id) {
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">강좌 유형</label>
                         <div class="flex gap-2">
                             <button type="button" id="rr-c-offbtn" onclick="setRegReqCourseType('offline')" class="px-4 py-2 rounded-full text-[12.5px] font-bold bg-primary text-white transition"><i class="fas fa-map-marker-alt text-[10px] mr-1"></i>오프라인</button>
-                            <button type="button" id="rr-c-zoombtn" onclick="setRegReqCourseType('zoom')" class="px-4 py-2 rounded-full text-[12.5px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary transition"><i class="fas fa-video text-[10px] mr-1"></i>줌</button>
+                            <button type="button" id="rr-c-zoombtn" onclick="setRegReqCourseType('zoom')" class="px-4 py-2 rounded-full text-[12.5px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary transition"><i class="fas fa-video text-[10px] mr-1"></i>줌(라이브)</button>
                         </div>
+                    </div>
+                    <div>
+                        <label class="block text-[13px] font-bold text-gray-700 mb-1.5">신청자명 <span class="text-red-400">*</span></label>
+                        <input type="text" id="rr-c-name" class="w-full p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition" placeholder="예: 홍길동">
                     </div>
                     <div>
                         <label class="block text-[13px] font-bold text-gray-700 mb-1.5">공고 제목 <span class="text-red-400">*</span></label>
