@@ -267,7 +267,7 @@
                            <div class="w-1.5 h-6 md:h-7 rounded-full bg-gradient-to-b from-[#2f3b89] to-[#9aa8ee] mr-3"></div>
                             <h3 class="text-[22px] md:text-[26px] font-black tracking-tight leading-tight pb-1 bg-gradient-to-r from-[#2f3b89] via-[#5a6ad0] to-[#9aa8ee] bg-clip-text text-transparent">대한민국 보험 공개 강좌 안내</h3>
                         </div>
-                        <p class="text-[12px] md:text-[13px] text-gray-400 mt-1 ml-[18px]">더 많은 수강생과 만나는 스마트한 방법.<br class="md:hidden"> 비용 부담 없이 강좌를 홍보하세요.</p>
+                        <p class="text-[12px] md:text-[13px] text-gray-500 mt-1 ml-[18px]">더 많은 수강생과 만나는 스마트한 방법.<br class="md:hidden"> 비용 부담 없이 강좌를 홍보하세요.</p>
                     </div>
                     <button onclick="openRegRequest()" title="강좌 등록 요청"
                             class="hidden md:flex items-center justify-center w-9 h-9 flex-shrink-0 hover:opacity-70 transition-opacity duration-200">
@@ -1292,8 +1292,8 @@
             const on = 'flex-1 md:flex-none px-5 py-2.5 rounded-full text-[13px] font-bold bg-primary text-white transition-all duration-200';
             const off = 'flex-1 md:flex-none px-5 py-2.5 rounded-full text-[13px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary hover:ring-primary/30 transition-all duration-200';
             const isInst = (type === 'instructor');
-            if (tI) { tI.className = isInst ? on : off; tI.innerHTML = '<i class="fas fa-user-tie text-[11px] mr-1.5"></i>강사 등록 요청'; }
-            if (tC) { tC.className = !isInst ? on : off; tC.innerHTML = '<i class="fas fa-bullhorn text-[11px] mr-1.5"></i>강좌 등록 요청'; }
+            if (tI) { tI.className = isInst ? on : off; tI.innerHTML = '<i class="fas fa-user-tie text-[11px] mr-1.5"></i>강사 등록 신청'; }
+            if (tC) { tC.className = !isInst ? on : off; tC.innerHTML = '<i class="fas fa-bullhorn text-[11px] mr-1.5"></i>강좌 등록 신청'; }
             document.getElementById('regreq-form-instructor')?.classList.toggle('hidden', !isInst);
             document.getElementById('regreq-form-course')?.classList.toggle('hidden', isInst);
             // 개인정보 동의 문구를 유형에 맞게 변경
@@ -1368,12 +1368,12 @@
                 fields,
                 agreed: true,
             }).then(() => {
-                alert('등록 요청이 접수되었습니다. 담당자가 검토 후 연락드리겠습니다.\n(문의: 02-525-1686)');
+                alert('등록 신청이 접수되었습니다. 담당자가 검토 후 연락드리겠습니다.\n(문의: 02-525-1686)');
                 closeRegRequest();
             }).catch(() => {
-                alert('요청 전송에 실패했습니다.\n잠시 후 다시 시도하시거나 02-525-1686으로 연락 주세요.');
+                alert('신청 전송에 실패했습니다.\n잠시 후 다시 시도하시거나 02-525-1686으로 연락 주세요.');
             }).finally(() => {
-                if (rbtn) { rbtn.disabled = false; rbtn.textContent = rbtn.dataset.orig || '등록 요청하기'; }
+                if (rbtn) { rbtn.disabled = false; rbtn.textContent = rbtn.dataset.orig || '등록 신청하기'; }
             });
         }
 
@@ -3422,7 +3422,7 @@ function openPosterModal(id) {
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl transform scale-95 transition-transform duration-300 overflow-hidden flex flex-col max-h-[92vh]">
             <div class="bg-gradient-to-r from-[#2f3b89] to-[#5a6ad0] text-white px-6 md:px-8 py-5 md:py-6 flex items-center justify-between flex-shrink-0">
                 <div>
-                    <h3 class="text-lg md:text-2xl font-black tracking-tight">강사 · 강좌 등록 요청</h3>
+                    <h3 class="text-lg md:text-2xl font-black tracking-tight">강사 · 강좌 등록 신청</h3>
                     <p class="text-[12px] text-white/80 mt-0.5">등록을 원하시는 유형을 선택하고 내용을 작성해 주세요.</p>
                 </div>
                 <button onclick="closeRegRequest()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/15 transition flex-shrink-0"><i class="fas fa-times text-lg"></i></button>
@@ -3432,9 +3432,9 @@ function openPosterModal(id) {
             <div class="px-6 md:px-8 pt-5 flex-shrink-0">
                 <div class="flex gap-2">
                     <button type="button" id="regreq-tab-instructor" onclick="setRegReqType('instructor')"
-                            class="flex-1 md:flex-none px-5 py-2.5 rounded-full text-[13px] font-bold bg-primary text-white transition-all duration-200"><i class="fas fa-user-tie text-[11px] mr-1.5"></i>강사 등록 요청</button>
+                            class="flex-1 md:flex-none px-5 py-2.5 rounded-full text-[13px] font-bold bg-primary text-white transition-all duration-200"><i class="fas fa-user-tie text-[11px] mr-1.5"></i>강사 등록 신청</button>
                     <button type="button" id="regreq-tab-course" onclick="setRegReqType('course')"
-                            class="flex-1 md:flex-none px-5 py-2.5 rounded-full text-[13px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary hover:ring-primary/30 transition-all duration-200"><i class="fas fa-bullhorn text-[11px] mr-1.5"></i>강좌 등록 요청</button>
+                            class="flex-1 md:flex-none px-5 py-2.5 rounded-full text-[13px] font-bold bg-white ring-1 ring-gray-200 text-gray-500 hover:text-primary hover:ring-primary/30 transition-all duration-200"><i class="fas fa-bullhorn text-[11px] mr-1.5"></i>강좌 등록 신청</button>
                 </div>
             </div>
 
@@ -3513,7 +3513,7 @@ function openPosterModal(id) {
                         <p><span class="font-semibold text-gray-600">수집 항목</span> — <span id="regreq-consent-items">강사명, 연락처, 이메일</span></p>
                         <p><span class="font-semibold text-gray-600">이용 목적</span> — <span id="regreq-consent-purpose">강사 등록 검토 및 안내</span></p>
                         <p><span class="font-semibold text-gray-600">보유 기간</span> — 검토 종료 후 1년, 이후 지체 없이 파기</p>
-                        <p><span class="font-semibold text-gray-600">동의 거부 권리</span> — 동의를 거부하실 수 있으며, 이 경우 등록 요청 접수가 제한됩니다.</p>
+                        <p><span class="font-semibold text-gray-600">동의 거부 권리</span> — 동의를 거부하실 수 있으며, 이 경우 등록 신청 접수가 제한됩니다.</p>
                     </div>
                     <label class="flex items-center gap-2 mt-3 cursor-pointer select-none">
                         <input type="checkbox" id="regreq-agree" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary/40">
@@ -3524,7 +3524,7 @@ function openPosterModal(id) {
 
             <div class="bg-gray-50/70 px-6 md:px-8 py-4 flex justify-end gap-2.5 border-t border-gray-100 flex-shrink-0">
                 <button onclick="closeRegRequest()" class="px-6 py-2.5 rounded-full ring-1 ring-gray-200 bg-white text-sm font-medium text-gray-600 hover:ring-gray-300 transition">취소</button>
-                <button id="regreq-submit-btn" onclick="submitRegRequest()" class="px-8 py-2.5 rounded-full bg-primary text-sm font-bold text-white shadow-[0_4px_14px_rgba(47,59,137,0.25)] hover:-translate-y-0.5 transition-all duration-200">등록 요청 보내기</button>
+                <button id="regreq-submit-btn" onclick="submitRegRequest()" class="px-8 py-2.5 rounded-full bg-primary text-sm font-bold text-white shadow-[0_4px_14px_rgba(47,59,137,0.25)] hover:-translate-y-0.5 transition-all duration-200">등록 신청하기</button>
             </div>
         </div>
     </div>
