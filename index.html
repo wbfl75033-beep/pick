@@ -342,6 +342,14 @@
                         <p class="text-[13px] text-gray-500 leading-relaxed">히어로 대형 배너 사진 · 문구 · 버튼 · 링크</p>
                     </div>
                 </button>
+                <!-- 방문 팝업 관리 -->
+                <button onclick="switchTab('admin-popup')" class="text-left bg-white rounded-2xl ring-1 ring-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 p-6 flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center flex-shrink-0"><i class="fas fa-window-restore text-rose-500 text-lg"></i></div>
+                    <div>
+                        <h3 class="text-base font-black text-gray-900 mb-1">방문 팝업 관리</h3>
+                        <p class="text-[13px] text-gray-500 leading-relaxed">사이트 접속 시 뜨는 이벤트 팝업 이미지 · 순서 · 링크</p>
+                    </div>
+                </button>
             </div>
 
         </div>
@@ -629,6 +637,39 @@
                         <button id="admin-banner-submit-btn" onclick="saveBanners()" class="px-8 py-2.5 rounded-full bg-primary text-sm font-bold text-white shadow-[0_4px_14px_rgba(47,59,137,0.25)] hover:-translate-y-0.5 transition-all duration-200">저장하기</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- [관리자] 방문 팝업 관리 탭 -->
+    <div id="admin-popup-tab" class="tab-content bg-[#f6f7fc] min-h-screen py-12">
+        <div class="container mx-auto px-4 max-w-4xl">
+            <div class="bg-white rounded-2xl overflow-hidden shadow-[0_8px_30px_rgba(17,24,39,0.1)]">
+                <div class="bg-gradient-to-r from-[#2f3b89] to-[#5a6ad0] text-white px-6 md:px-8 py-6 flex items-center justify-between">
+                    <h2 class="text-lg md:text-xl font-black tracking-tight"><i class="fas fa-window-restore mr-2"></i>방문 팝업 관리</h2>
+                    <button onclick="switchTab('admin-hub')" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/15 transition"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="p-6 md:p-8">
+                    <p class="text-[13px] text-gray-500 mb-4">권장 규격 — 600 × 750px (세로형, 4:5 비율). 문구·버튼이 포함된 완성된 이미지를 그대로 올리면 됩니다. 여러 개 등록하면 팝업 상단에 진행 바가 표시되고, 일정 시간마다 자동으로 넘어가며 손으로 밀어서도 넘길 수 있습니다.</p>
+                    <div id="popup-admin-list" class="space-y-4 mb-6"></div>
+                    <button onclick="addPopup()" class="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 text-sm font-bold hover:border-primary/40 hover:text-primary transition"><i class="fas fa-plus mr-1.5"></i>팝업 추가</button>
+                    <div class="flex justify-end gap-2 mt-6 pt-5 border-t border-gray-100">
+                        <button onclick="switchTab('admin-hub')" class="px-6 py-2.5 rounded-full ring-1 ring-gray-200 bg-white text-sm font-medium text-gray-600 hover:ring-gray-300 transition">뒤로</button>
+                        <button id="admin-popup-submit-btn" onclick="savePopups()" class="px-8 py-2.5 rounded-full bg-primary text-sm font-bold text-white shadow-[0_4px_14px_rgba(47,59,137,0.25)] hover:-translate-y-0.5 transition-all duration-200">저장하기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 방문 팝업 (사이트 접속 시 노출) -->
+    <div id="site-popup-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300" onclick="if(event.target===this) closeSitePopup(false)">
+        <div class="w-full max-w-sm transform scale-95 transition-transform duration-300">
+            <div id="site-popup-bars" class="hidden flex gap-1.5 mb-2 px-0.5"></div>
+            <div id="site-popup-track" class="relative w-full aspect-[4/5] rounded-2xl overflow-hidden bg-gray-100 shadow-2xl select-none"></div>
+            <div class="flex items-center justify-between mt-3 px-1">
+                <button onclick="closeSitePopup(true)" class="text-[13px] font-medium text-white/80 hover:text-white transition">오늘 하루 보지 않기</button>
+                <button onclick="closeSitePopup(false)" class="text-[13px] font-bold text-white hover:text-white/80 transition">닫기 <i class="fas fa-times ml-1"></i></button>
             </div>
         </div>
     </div>
@@ -1717,6 +1758,133 @@
             if (bar) { bar.style.display = 'none'; clearInterval(topAdTimer); }
         }
 
+        // ===== 방문 팝업 (사이트 접속 시 노출) =====
+        let popups = [];
+        let popupIdx = 0;
+        let popupTimer = null;
+        const POPUP_INTERVAL = 4500;
+
+        function popupHiddenToday() {
+            try { return localStorage.getItem('fp_popup_hide_until') === new Date().toDateString(); }
+            catch (e) { return false; }
+        }
+
+        function renderSitePopupSlides() {
+            const track = document.getElementById('site-popup-track');
+            const bars  = document.getElementById('site-popup-bars');
+            if (!track) return;
+            track.innerHTML = '';
+            popups.forEach((p, i) => {
+                const slide = document.createElement(p.link ? 'a' : 'div');
+                if (p.link) { slide.href = p.link; slide.target = '_blank'; slide.rel = 'noopener'; }
+                slide.className = 'absolute inset-0 transition-opacity duration-300';
+                slide.style.opacity = (i === popupIdx) ? '1' : '0';
+                slide.style.zIndex  = (i === popupIdx) ? '10' : '0';
+                slide.innerHTML = p.image ? `<img src="${p.image}" class="w-full h-full object-cover" draggable="false">` : '';
+                track.appendChild(slide);
+            });
+            if (bars) {
+                bars.innerHTML = '';
+                bars.classList.toggle('hidden', popups.length < 2);
+                popups.forEach((_, i) => {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'flex-1 h-[3px] rounded-full bg-white/35 overflow-hidden';
+                    wrap.innerHTML = `<div class="h-full bg-white rounded-full" style="width:${i < popupIdx ? '100' : '0'}%"></div>`;
+                    bars.appendChild(wrap);
+                });
+            }
+        }
+
+        function updateSitePopup() {
+            const track = document.getElementById('site-popup-track');
+            if (!track) return;
+            Array.from(track.children).forEach((el, i) => {
+                el.style.opacity = (i === popupIdx) ? '1' : '0';
+                el.style.zIndex  = (i === popupIdx) ? '10' : '0';
+            });
+            const bars = document.getElementById('site-popup-bars');
+            if (bars) {
+                Array.from(bars.children).forEach((wrap, i) => {
+                    const fill = wrap.firstElementChild;
+                    if (!fill) return;
+                    fill.style.transition = 'none';
+                    fill.style.width = (i < popupIdx) ? '100%' : '0%';
+                    if (i === popupIdx) {
+                        requestAnimationFrame(() => {
+                            fill.style.transition = `width ${POPUP_INTERVAL}ms linear`;
+                            fill.style.width = '100%';
+                        });
+                    }
+                });
+            }
+        }
+
+        function movePopup(step) {
+            if (!popups.length) return;
+            popupIdx = (popupIdx + step + popups.length) % popups.length;
+            updateSitePopup();
+            startPopupAuto();
+        }
+
+        function startPopupAuto() {
+            clearInterval(popupTimer);
+            if (popups.length < 2) return;
+            popupTimer = setInterval(() => {
+                popupIdx = (popupIdx + 1) % popups.length;
+                updateSitePopup();
+            }, POPUP_INTERVAL);
+        }
+
+        function showSitePopup() {
+            if (!popups.length || popupHiddenToday()) return;
+            popupIdx = 0;
+            renderSitePopupSlides();
+            const m = document.getElementById('site-popup-modal');
+            if (!m) return;
+            m.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                m.classList.remove('opacity-0');
+                const box = m.firstElementChild; if (box) box.classList.remove('scale-95');
+            });
+            updateSitePopup();
+            startPopupAuto();
+        }
+
+        function closeSitePopup(hideToday) {
+            if (hideToday) {
+                try { localStorage.setItem('fp_popup_hide_until', new Date().toDateString()); } catch (e) {}
+            }
+            const m = document.getElementById('site-popup-modal');
+            if (!m) return;
+            m.classList.add('opacity-0');
+            const box = m.firstElementChild; if (box) box.classList.add('scale-95');
+            clearInterval(popupTimer);
+            setTimeout(() => m.classList.add('hidden'), 250);
+        }
+
+        // 모바일: 화살표 버튼 대신 좌우 스와이프로 팝업 전환
+        (function setupPopupSwipe() {
+            const el = document.getElementById('site-popup-track');
+            if (!el) return;
+            let startX = 0, startY = 0, tracking = false;
+            el.addEventListener('touchstart', e => {
+                if (!e.touches || e.touches.length !== 1) return;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                tracking = true;
+            }, { passive: true });
+            el.addEventListener('touchend', e => {
+                if (!tracking) return;
+                tracking = false;
+                const t = e.changedTouches && e.changedTouches[0];
+                if (!t) return;
+                const dx = t.clientX - startX, dy = t.clientY - startY;
+                if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+                    movePopup(dx < 0 ? 1 : -1);
+                }
+            }, { passive: true });
+        })();
+
         function renderBanner() {
             const track = document.getElementById('banner-track');
             const dots  = document.getElementById('banner-dots');
@@ -2043,6 +2211,72 @@
             }
         }
 
+        // ===== [관리자] 방문 팝업 관리 =====
+        function renderPopupAdmin() {
+            const list = document.getElementById('popup-admin-list');
+            if (!list) return;
+            list.innerHTML = '';
+            popups.forEach((p, i) => {
+                const row = document.createElement('div');
+                row.className = 'rounded-xl ring-1 ring-gray-100 bg-gray-50/60 p-4';
+                row.innerHTML = `
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-[13px] font-bold text-gray-700">팝업 ${i+1}</span>
+                        <button onclick="removePopup(${i})" class="text-red-400 hover:text-red-600 text-sm"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                    <div class="space-y-2.5">
+                        ${p.image ? `<img src="${p.image}" class="h-28 rounded ring-1 ring-gray-200 object-cover mb-1">` : ''}
+                        <div class="flex items-center gap-2">
+                            <span class="text-[12px] font-semibold text-gray-500 w-20 flex-shrink-0">이미지</span>
+                            <input type="file" accept="image/*" onchange="onPopupImage(${i}, this)" class="flex-1 text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer ring-1 ring-gray-200 rounded-lg p-1.5">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[12px] font-semibold text-gray-500 w-20 flex-shrink-0">링크</span>
+                            <input type="text" data-pu="link" data-i="${i}" value="${p.link || ''}" placeholder="클릭 시 이동 링크(선택)" class="flex-1 p-2.5 rounded-lg ring-1 ring-gray-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-primary/40">
+                        </div>
+                    </div>`;
+                list.appendChild(row);
+            });
+            if (popups.length === 0) list.innerHTML = '<p class="text-center text-gray-400 text-sm py-6">등록된 팝업이 없습니다. 아래 버튼으로 추가하세요.</p>';
+        }
+        function collectPopupInputs() {
+            document.querySelectorAll('#popup-admin-list [data-pu]').forEach(el => {
+                const i = +el.dataset.i, key = el.dataset.pu;
+                if (popups[i]) popups[i][key] = el.value.trim();
+            });
+        }
+        async function onPopupImage(i, input) {
+            collectPopupInputs();
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const oldUrl = popups[i].image;
+            input.disabled = true;
+            try {
+                popups[i].image = await PickUpload.uploadFromInput(input, 'popups');
+                if (oldUrl) PickUpload.removeByUrl(oldUrl);
+            } catch (e) {
+                alert('업로드에 실패했습니다.\n' + (e.message || ''));
+            }
+            renderPopupAdmin();
+        }
+        function addPopup() { collectPopupInputs(); popups.push({ image: '', link: '' }); renderPopupAdmin(); }
+        function removePopup(i) { collectPopupInputs(); popups.splice(i, 1); renderPopupAdmin(); }
+        async function savePopups() {
+            collectPopupInputs();
+            const btn = document.getElementById('admin-popup-submit-btn');
+            btn.disabled = true;
+            try {
+                await PickDB.savePopups(popups);
+                await loadFromDB();
+                alert('방문 팝업이 저장되었습니다.');
+                switchTab('landing');
+            } catch (e) {
+                alert("저장에 실패했습니다.\n" + (e.message || ''));
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
         function updateBanner() {
             const track   = document.getElementById('banner-track');
             const dots    = document.getElementById('banner-dots');
@@ -2163,19 +2397,21 @@
             if (!window.PICK_READY) return;
             const admin = !!(window.PickAuth && window.PickAuth.isAdmin());
             try {
-                const [cats, insts, posts, bans, ads, subs] = await Promise.all([
+                const [cats, insts, posts, bans, ads, subs, pops] = await Promise.all([
                     PickDB.fetchCategories(),
                     PickDB.fetchInstructors(admin),
                     PickDB.fetchPosters(),
                     PickDB.fetchBanners(),
                     PickDB.fetchTopAds(),
                     PickDB.fetchBannerSubtexts(),
+                    PickDB.fetchPopups(),
                 ]);
                 if (cats.length)  categories = cats;
                 if (insts.length) instructors = insts;
                 posters = posts;
                 if (bans.length)  banners = bans;
                 if (ads.length)   topAds = ads;
+                popups = pops;
                 // 배너별 오른쪽 보조문구 3개씩을 slot 기준으로 각 배너에 묶어 넣기
                 if (bans.length) {
                     bans.forEach((b, i) => {
@@ -2220,7 +2456,8 @@
             renderPosters();
             updateWishCount();
             populatePosterTimeSelects();
-            
+            setTimeout(showSitePopup, 600);
+
             const adminCatContainer = document.getElementById('admin-category-checkboxes');
             if (adminCatContainer) {
                 adminCatContainer.innerHTML = '';
@@ -3025,6 +3262,7 @@ function openPosterModal(id) {
             if (tabId === 'admin-poster' && editingPosterId === null) resetPosterAdminFormUI();
             if (tabId === 'admin-topad') renderTopAdAdmin();
             if (tabId === 'admin-banner') renderBannerAdmin();
+            if (tabId === 'admin-popup') renderPopupAdmin();
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.getElementById(`${tabId}-tab`).classList.add('active');
             window.scrollTo(0, 0);

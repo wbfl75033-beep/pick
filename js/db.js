@@ -76,6 +76,8 @@
 
   const toBannerSubtext = r => ({ id: r.id, slot: r.slot, variantOrder: r.variant_order, sub1: r.sub1 || '', sub2: r.sub2 || '', color: r.color || '' });
 
+  const toPopup = r => ({ id: r.id, image: r.image_url || '', link: r.link || '', sortOrder: r.sort_order, isVisible: r.is_visible });
+
   /* ---------- 화면 객체 → DB row 변환 ---------- */
   const fromInstructor = o => ({
     name: o.name,
@@ -165,6 +167,14 @@
     const { data, error } = await sb.from('banner_subtexts').select('*').order('slot').order('variant_order');
     if (error) err('배너 보조문구 조회', error);
     return data.map(toBannerSubtext);
+  }
+
+  // 방문 팝업 — 이용자는 is_visible 인 것만 (RLS), 관리자는 전체 조회
+  async function fetchPopups() {
+    const { data, error } = await sb.from('popups').select('*')
+      .order('sort_order', { ascending: true }).order('id', { ascending: true });
+    if (error) err('팝업 조회', error);
+    return data.map(toPopup);
   }
 
   /* ============================================================
@@ -274,6 +284,18 @@
     if (error) err('배너 보조문구 저장', error);
   }
 
+  // 방문 팝업 — 화면에서 목록 전체를 편집하므로 전체 교체 방식
+  async function savePopups(list) {
+    const { error: dErr } = await sb.from('popups').delete().neq('id', -1);
+    if (dErr) err('팝업 초기화', dErr);
+    if (!list.length) return;
+    const rows = list.map((p, i) => ({
+      sort_order: i + 1, image_url: p.image || null, link: p.link || null, is_visible: true,
+    }));
+    const { error } = await sb.from('popups').insert(rows);
+    if (error) err('팝업 저장', error);
+  }
+
   // 노출 순서 저장 (순서변경 기능 붙일 때 사용)
   async function saveOrder(table, idsInOrder) {
     for (let i = 0; i < idsInOrder.length; i++) {
@@ -289,8 +311,8 @@
 
   window.PickDB = {
     client: sb,
-    fetchCategories, fetchInstructors, fetchPosters, fetchBanners, fetchTopAds, fetchBannerSubtexts,
+    fetchCategories, fetchInstructors, fetchPosters, fetchBanners, fetchTopAds, fetchBannerSubtexts, fetchPopups,
     saveInstructor, deleteInstructor, savePoster, deletePoster,
-    saveTopAds, saveBanners, saveBannerSubtexts, saveOrder, setPinned,
+    saveTopAds, saveBanners, saveBannerSubtexts, savePopups, saveOrder, setPinned,
   };
 })();

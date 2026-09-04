@@ -1,7 +1,7 @@
 /* ============================================================
    강사 Pick — Supabase Storage 업로드
    기존 URL.createObjectURL(임시 미리보기) 을 대체합니다.
-   폴더: instructors / profiles / posters / maps / banners / ads
+   폴더: instructors / profiles / posters / maps / banners / ads / popups
    ============================================================ */
 (function () {
   const sb = window.PickDB.client;

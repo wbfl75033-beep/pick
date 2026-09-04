@@ -302,3 +302,29 @@ insert into public.banner_subtexts (slot, variant_order, sub1, sub2) values
 -- ============================================================
 alter table public.banner_subtexts
   add column if not exists color text;
+
+
+-- ============================================================
+-- 14. [추가] 방문 팝업 (popups)
+--     사이트 접속 시 뜨는 이벤트/공지 팝업. 완성된 이미지를 그대로
+--     업로드하는 방식이라 문구 컬럼은 없음. 여러 개 등록하면 화면에서
+--     자동 롤링 + 스와이프로 넘어감.
+-- ============================================================
+create table public.popups (
+  id           bigserial primary key,
+  image_url    text,
+  link         text,
+  sort_order   int not null default 0,
+  is_visible   boolean not null default true,
+  updated_at   timestamptz not null default now()
+);
+
+alter table public.popups enable row level security;
+
+create policy pub_read_popups on public.popups
+  for select to anon, authenticated using (is_visible);
+create policy adm_write_popups on public.popups
+  for all to authenticated using (true) with check (true);
+
+create trigger trg_popups_touch before update on public.popups
+  for each row execute function public.touch_updated_at();
