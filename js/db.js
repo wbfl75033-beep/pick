@@ -290,7 +290,7 @@
     if (dErr) err('팝업 초기화', dErr);
     if (!list.length) return;
     const rows = list.map((p, i) => ({
-      sort_order: i + 1, image_url: p.image || null, link: p.link || null, is_visible: true,
+      sort_order: i + 1, image_url: p.image || null, link: p.link || null, is_visible: p.isVisible !== false,
     }));
     const { error } = await sb.from('popups').insert(rows);
     if (error) err('팝업 저장', error);

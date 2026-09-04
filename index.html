@@ -662,14 +662,16 @@
         </div>
     </div>
 
-    <!-- 방문 팝업 (사이트 접속 시 노출) -->
-    <div id="site-popup-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300" onclick="if(event.target===this) closeSitePopup(false)">
-        <div class="w-full max-w-sm transform scale-95 transition-transform duration-300">
+    <!-- 방문 팝업 (사이트 접속 시 노출) — 배경 없이 팝업 박스만 페이지 위에 깔끔하게 표시 -->
+    <div id="site-popup-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 opacity-0 transition-opacity duration-300 pointer-events-none">
+        <div class="w-full max-w-sm transform scale-95 transition-transform duration-300 pointer-events-auto">
             <div id="site-popup-bars" class="hidden flex gap-1.5 mb-2 px-0.5"></div>
-            <div id="site-popup-track" class="relative w-full aspect-[4/5] rounded-2xl overflow-hidden bg-gray-100 shadow-2xl select-none"></div>
-            <div class="flex items-center justify-between mt-3 px-1">
-                <button onclick="closeSitePopup(true)" class="text-[13px] font-medium text-white/80 hover:text-white transition">오늘 하루 보지 않기</button>
-                <button onclick="closeSitePopup(false)" class="text-[13px] font-bold text-white hover:text-white/80 transition">닫기 <i class="fas fa-times ml-1"></i></button>
+            <div class="relative w-full aspect-[4/5] rounded-2xl overflow-hidden bg-gray-100 shadow-2xl select-none">
+                <div id="site-popup-track" class="absolute inset-0"></div>
+                <div class="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between">
+                    <button onclick="closeSitePopup(true)" class="px-3 py-1.5 rounded-full bg-black/45 backdrop-blur-sm text-white text-[11px] font-medium hover:bg-black/60 transition">오늘 하루 보지 않기</button>
+                    <button onclick="closeSitePopup(false)" class="px-3 py-1.5 rounded-full bg-black/45 backdrop-blur-sm text-white text-[11px] font-bold hover:bg-black/60 transition">닫기 <i class="fas fa-times ml-1"></i></button>
+                </div>
             </div>
         </div>
     </div>
@@ -1759,7 +1761,8 @@
         }
 
         // ===== 방문 팝업 (사이트 접속 시 노출) =====
-        let popups = [];
+        let popups = [];          // 관리자 편집용 전체 목록 (숨김 포함)
+        let visiblePopups = [];   // 실제 화면에 노출할 목록 (isVisible !== false 만)
         let popupIdx = 0;
         let popupTimer = null;
         const POPUP_INTERVAL = 4500;
@@ -1774,7 +1777,7 @@
             const bars  = document.getElementById('site-popup-bars');
             if (!track) return;
             track.innerHTML = '';
-            popups.forEach((p, i) => {
+            visiblePopups.forEach((p, i) => {
                 const slide = document.createElement(p.link ? 'a' : 'div');
                 if (p.link) { slide.href = p.link; slide.target = '_blank'; slide.rel = 'noopener'; }
                 slide.className = 'absolute inset-0 transition-opacity duration-300';
@@ -1785,8 +1788,8 @@
             });
             if (bars) {
                 bars.innerHTML = '';
-                bars.classList.toggle('hidden', popups.length < 2);
-                popups.forEach((_, i) => {
+                bars.classList.toggle('hidden', visiblePopups.length < 2);
+                visiblePopups.forEach((_, i) => {
                     const wrap = document.createElement('div');
                     wrap.className = 'flex-1 h-[3px] rounded-full bg-white/35 overflow-hidden';
                     wrap.innerHTML = `<div class="h-full bg-white rounded-full" style="width:${i < popupIdx ? '100' : '0'}%"></div>`;
@@ -1820,23 +1823,24 @@
         }
 
         function movePopup(step) {
-            if (!popups.length) return;
-            popupIdx = (popupIdx + step + popups.length) % popups.length;
+            if (!visiblePopups.length) return;
+            popupIdx = (popupIdx + step + visiblePopups.length) % visiblePopups.length;
             updateSitePopup();
             startPopupAuto();
         }
 
         function startPopupAuto() {
             clearInterval(popupTimer);
-            if (popups.length < 2) return;
+            if (visiblePopups.length < 2) return;
             popupTimer = setInterval(() => {
-                popupIdx = (popupIdx + 1) % popups.length;
+                popupIdx = (popupIdx + 1) % visiblePopups.length;
                 updateSitePopup();
             }, POPUP_INTERVAL);
         }
 
         function showSitePopup() {
-            if (!popups.length || popupHiddenToday()) return;
+            visiblePopups = popups.filter(p => p.isVisible !== false && p.image);
+            if (!visiblePopups.length || popupHiddenToday()) return;
             popupIdx = 0;
             renderSitePopupSlides();
             const m = document.getElementById('site-popup-modal');
@@ -2217,12 +2221,16 @@
             if (!list) return;
             list.innerHTML = '';
             popups.forEach((p, i) => {
+                const on = p.isVisible !== false;
                 const row = document.createElement('div');
                 row.className = 'rounded-xl ring-1 ring-gray-100 bg-gray-50/60 p-4';
                 row.innerHTML = `
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-[13px] font-bold text-gray-700">팝업 ${i+1}</span>
-                        <button onclick="removePopup(${i})" class="text-red-400 hover:text-red-600 text-sm"><i class="fas fa-trash-alt"></i></button>
+                        <div class="flex items-center gap-3">
+                            <button onclick="togglePopupVisible(${i})" class="text-[11px] font-bold px-2.5 py-1 rounded-full transition ${on ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500'}">${on ? '노출 중' : '숨김'}</button>
+                            <button onclick="removePopup(${i})" class="text-red-400 hover:text-red-600 text-sm"><i class="fas fa-trash-alt"></i></button>
+                        </div>
                     </div>
                     <div class="space-y-2.5">
                         ${p.image ? `<img src="${p.image}" class="h-28 rounded ring-1 ring-gray-200 object-cover mb-1">` : ''}
@@ -2259,8 +2267,14 @@
             }
             renderPopupAdmin();
         }
-        function addPopup() { collectPopupInputs(); popups.push({ image: '', link: '' }); renderPopupAdmin(); }
+        function addPopup() { collectPopupInputs(); popups.push({ image: '', link: '', isVisible: true }); renderPopupAdmin(); }
         function removePopup(i) { collectPopupInputs(); popups.splice(i, 1); renderPopupAdmin(); }
+        function togglePopupVisible(i) {
+            collectPopupInputs();
+            if (!popups[i]) return;
+            popups[i].isVisible = !(popups[i].isVisible !== false);
+            renderPopupAdmin();
+        }
         async function savePopups() {
             collectPopupInputs();
             const btn = document.getElementById('admin-popup-submit-btn');
