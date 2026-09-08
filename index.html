@@ -1621,38 +1621,37 @@
             });
         }
 
-        // 상단 고정 핀 토글 — DB(is_pinned)에 저장. 모든 방문자 화면에 동일하게 반영됨.
-        async function togglePin(id, ev) {
+        // 강사 순서 이동 (위/아래 한 칸) — 전체 배열의 sort_order를 다시 매겨 DB에 저장.
+        // 모든 방문자 화면에 동일하게 반영됨.
+        async function moveInstructor(id, dir, ev) {
             if (ev) ev.stopPropagation();   // 카드 클릭(모달 열림) 방지
-            const inst = instructors.find(i => i.id === id);
-            if (!inst) return;
-            const next = !inst.isPinned;
-            inst.isPinned = next;           // 낙관적 업데이트
-            instructorVisibleCount = INSTRUCTOR_LIMIT;   // 상단으로 올라오니 첫 페이지부터
+            const idx = instructors.findIndex(i => i.id === id);
+            const swapIdx = idx + dir;
+            if (idx === -1 || swapIdx < 0 || swapIdx >= instructors.length) return;
+            [instructors[idx], instructors[swapIdx]] = [instructors[swapIdx], instructors[idx]];
+            instructorVisibleCount = INSTRUCTOR_LIMIT;   // 순서가 바뀌니 첫 페이지부터
             renderInstructors();
             try {
-                await PickDB.setPinned(id, next);
+                await PickDB.saveOrder('instructors', instructors.map(i => i.id));
             } catch (e) {
-                inst.isPinned = !next;      // 실패 시 되돌림
-                renderInstructors();
-                alert('고정 상태 저장에 실패했습니다.\n' + (e.message || ''));
+                alert('순서 저장에 실패했습니다.\n' + (e.message || ''));
+                await loadFromDB(); renderAll();   // 실패 시 서버 상태로 복구
             }
         }
 
-        // 상단 고정 핀 토글 (공고) — DB(is_pinned)에 저장. 모든 방문자 화면에 동일하게 반영됨.
-        async function togglePosterPin(id, ev) {
+        // 공고 순서 이동 (위/아래 한 칸) — 전체 배열의 sort_order를 다시 매겨 DB에 저장.
+        async function movePosterItem(id, dir, ev) {
             if (ev) ev.stopPropagation();   // 카드 클릭(모달 열림) 방지
-            const poster = posters.find(p => p.id === id);
-            if (!poster) return;
-            const next = !poster.isPinned;
-            poster.isPinned = next;         // 낙관적 업데이트
+            const idx = posters.findIndex(p => p.id === id);
+            const swapIdx = idx + dir;
+            if (idx === -1 || swapIdx < 0 || swapIdx >= posters.length) return;
+            [posters[idx], posters[swapIdx]] = [posters[swapIdx], posters[idx]];
             renderPosters();
             try {
-                await PickDB.setPosterPinned(id, next);
+                await PickDB.saveOrder('posters', posters.map(p => p.id));
             } catch (e) {
-                poster.isPinned = !next;    // 실패 시 되돌림
-                renderPosters();
-                alert('고정 상태 저장에 실패했습니다.\n' + (e.message || ''));
+                alert('순서 저장에 실패했습니다.\n' + (e.message || ''));
+                await loadFromDB(); renderAll();   // 실패 시 서버 상태로 복구
             }
         }
 
@@ -2717,17 +2716,7 @@
         // 최신 등록순: id가 클수록 최근에 등록됐다고 가정 (내림차순)
         filtered.sort((a, b) => (b.id || 0) - (a.id || 0));
     }
-    // default는 배열 원래 순서(관리자 지정 순서) 유지
-
-    // ===== 고정 핀: 기본순일 때만 핀 꽂은 강사를 최상단으로 (핀 순서 유지) =====
-    // 최신순·이름순에서는 핀을 강제로 올리지 않고 해당 정렬 순서 그대로 노출
-    if (currentSort === 'default') {
-        const pinned = filtered.filter(i => i.isPinned);
-        if (pinned.length > 0) {
-            const rest = filtered.filter(i => !i.isPinned);
-            filtered = pinned.concat(rest);
-        }
-    }
+    // default는 배열 원래 순서(관리자 지정 순서, 위/아래 이동으로 조정) 유지
 
     if (countDisplay) countDisplay.textContent = filtered.length;
 
@@ -2828,18 +2817,20 @@
             badgeBg = 'bg-emerald-600';
         }
 
-        // 고정 핀 버튼 (전체분야 + 기본정렬 + 검색/태그 없을 때만 노출)
-        const isPinned = !!inst.isPinned;
-        const showPin = isAllCategory && (!currentKeyword) && (currentTag === 'all' || currentTag === '전체') && (currentSort === 'default');
-        // 핀이 꽂힌 카드는 항상 핀 아이콘 표시, 아니면 hover 시 표시
-        const reorderHtml = showPin ? `
-            <button data-admin-only onclick="togglePin(${inst.id}, event)" title="${isPinned ? '상단 고정 해제' : '상단 고정'}"
-                    class="absolute top-2 right-2 z-20 w-8 h-8 rounded-full shadow-sm flex items-center justify-center transition-all duration-200
-                           ${isPinned
-                             ? 'bg-primary text-white ring-1 ring-primary'
-                             : 'bg-white/95 ring-1 ring-gray-200 text-gray-500 opacity-0 group-hover:opacity-100 hover:text-primary hover:ring-primary/40'}">
-                <i class="fas fa-thumbtack text-[12px] ${isPinned ? '' : 'rotate-45'}"></i>
-            </button>` : '';
+        // 순서 이동 버튼 (전체분야 + 기본정렬 + 검색/태그 없을 때만 노출)
+        const showReorder = isAllCategory && (!currentKeyword) && (currentTag === 'all' || currentTag === '전체') && (currentSort === 'default');
+        const instFullIdx = showReorder ? instructors.findIndex(i => i.id === inst.id) : -1;
+        const reorderHtml = showReorder ? `
+            <div class="absolute top-2 right-2 z-20 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                <button data-admin-only onclick="moveInstructor(${inst.id}, -1, event)" title="위로" ${instFullIdx <= 0 ? 'disabled' : ''}
+                        class="w-7 h-7 rounded-full bg-white/95 shadow-sm ring-1 ring-gray-200 text-gray-500 flex items-center justify-center hover:text-primary hover:ring-primary/40 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+                    <i class="fas fa-chevron-up text-[11px]"></i>
+                </button>
+                <button data-admin-only onclick="moveInstructor(${inst.id}, 1, event)" title="아래로" ${instFullIdx >= instructors.length - 1 ? 'disabled' : ''}
+                        class="w-7 h-7 rounded-full bg-white/95 shadow-sm ring-1 ring-gray-200 text-gray-500 flex items-center justify-center hover:text-primary hover:ring-primary/40 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+                    <i class="fas fa-chevron-down text-[11px]"></i>
+                </button>
+            </div>` : '';
 
         // 찜(하트) 버튼 - 사진 우측 하단에 배치 (태그/순서버튼 안 가림)
         const isWished = wishlist.includes(inst.id);
@@ -2903,15 +2894,8 @@
                 return currentPosterType === 'all' || t === currentPosterType;
             });
 
-            // ===== 고정 핀: 핀 꽂은 공고를 최상단으로 (핀 순서 유지) =====
-            const pinnedPosters = list.filter(p => p.isPinned);
-            if (pinnedPosters.length > 0) {
-                const rest = list.filter(p => !p.isPinned);
-                list = pinnedPosters.concat(rest);
-            }
-
-            // 고정 핀 버튼은 전체보기일 때만 노출 (강사 카드와 동일한 규칙)
-            const showPosterPin = (currentPosterType === 'all');
+            // 순서 이동 버튼은 전체보기일 때만 노출 (강사 카드와 동일한 규칙)
+            const showPosterReorder = (currentPosterType === 'all');
 
           list.forEach((poster, idx) => {
                 // ===== D-day 계산 =====
@@ -2932,16 +2916,19 @@
                     ? `<span class="absolute top-2.5 right-2.5 z-10 px-2.5 py-1 rounded-full text-[11px] font-bold text-white shadow-sm bg-blue-500"><i class="fas fa-video text-[9px] mr-1"></i>라이브</span>`
                     : `<span class="absolute top-2.5 right-2.5 z-10 px-2.5 py-1 rounded-full text-[11px] font-bold text-white shadow-sm bg-emerald-600"><i class="fas fa-map-marker-alt text-[9px] mr-1"></i>오프라인</span>`;
 
-                // 고정 핀 버튼 (전체보기일 때만 노출, 이미지 우측 하단)
-                const isPosterPinned = !!poster.isPinned;
-                const posterPinHtml = showPosterPin ? `
-                    <button data-admin-only onclick="togglePosterPin(${poster.id}, event)" title="${isPosterPinned ? '상단 고정 해제' : '상단 고정'}"
-                            class="absolute bottom-2 right-2 z-20 w-8 h-8 rounded-full shadow-sm flex items-center justify-center transition-all duration-200
-                                   ${isPosterPinned
-                                     ? 'bg-primary text-white ring-1 ring-primary'
-                                     : 'bg-white/95 ring-1 ring-gray-200 text-gray-500 opacity-0 group-hover:opacity-100 hover:text-primary hover:ring-primary/40'}">
-                        <i class="fas fa-thumbtack text-[12px] ${isPosterPinned ? '' : 'rotate-45'}"></i>
-                    </button>` : '';
+                // 순서 이동 버튼 (전체보기일 때만 노출, 이미지 우측 하단)
+                const posterFullIdx = showPosterReorder ? posters.findIndex(p => p.id === poster.id) : -1;
+                const posterReorderHtml = showPosterReorder ? `
+                    <div class="absolute bottom-2 right-2 z-20 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                        <button data-admin-only onclick="movePosterItem(${poster.id}, -1, event)" title="위로" ${posterFullIdx <= 0 ? 'disabled' : ''}
+                                class="w-7 h-7 rounded-full bg-white/95 shadow-sm ring-1 ring-gray-200 text-gray-500 flex items-center justify-center hover:text-primary hover:ring-primary/40 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+                            <i class="fas fa-chevron-up text-[11px]"></i>
+                        </button>
+                        <button data-admin-only onclick="movePosterItem(${poster.id}, 1, event)" title="아래로" ${posterFullIdx >= posters.length - 1 ? 'disabled' : ''}
+                                class="w-7 h-7 rounded-full bg-white/95 shadow-sm ring-1 ring-gray-200 text-gray-500 flex items-center justify-center hover:text-primary hover:ring-primary/40 disabled:opacity-30 disabled:pointer-events-none transition-colors">
+                            <i class="fas fa-chevron-down text-[11px]"></i>
+                        </button>
+                    </div>` : '';
 
                 const card = document.createElement('div');
                 card.className = 'reveal bg-white rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full group ' +
@@ -2956,7 +2943,7 @@
                         <div class="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-gray-50 ring-1 ring-gray-100 flex items-center justify-center">
                             ${ddayHtml}
                             ${typeBadge}
-                            ${posterPinHtml}
+                            ${posterReorderHtml}
                             <img src="${poster.image}" alt="${poster.title}" class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.04]">
                         </div>
                     </div>

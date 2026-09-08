@@ -130,7 +130,6 @@
   async function fetchInstructors(adminMode) {
     const table = adminMode ? 'instructors' : 'instructors_public';
     const { data, error } = await sb.from(table).select('*')
-      .order('is_pinned', { ascending: false })
       .order('sort_order', { ascending: true })
       .order('id', { ascending: true });
     if (error) err('강사 조회', error);
@@ -146,7 +145,6 @@
 
   async function fetchPosters() {
     const { data, error } = await sb.from('posters').select('*')
-      .order('is_pinned', { ascending: false })
       .order('sort_order', { ascending: true }).order('id', { ascending: false });
     if (error) err('공고 조회', error);
     return data.map(toPoster);
