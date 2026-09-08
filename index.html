@@ -1225,6 +1225,7 @@
         let currentSort = "default";             // default | name | latest
         let wishlist = [];                        // 찜한 강사 id 배열
         let pinnedIds = [];                       // 상단 고정된 강사 id (핀 꽂은 순서)
+        let pinnedPosterIds = [];                 // 상단 고정된 공고 id (핀 꽂은 순서)
         let editingId = null; 
         let currentModalId = null; 
         let editingPosterId = null;
@@ -1643,6 +1644,28 @@
         }
         function savePins() {
             try { localStorage.setItem('fp_pinned', JSON.stringify(pinnedIds)); } catch (e) {}
+        }
+
+        // 상단 고정 핀 토글 (공고)
+        function togglePosterPin(id, ev) {
+            if (ev) ev.stopPropagation();   // 카드 클릭(모달 열림) 방지
+            const i = pinnedPosterIds.indexOf(id);
+            if (i > -1) {
+                pinnedPosterIds.splice(i, 1);        // 이미 고정 → 해제
+            } else {
+                pinnedPosterIds.push(id);            // 새로 고정 (뒤에 추가 = 핀 순서 유지)
+            }
+            savePosterPins();
+            renderPosters();
+        }
+        function loadPosterPins() {
+            try {
+                const raw = localStorage.getItem('fp_pinned_posters');
+                pinnedPosterIds = raw ? JSON.parse(raw) : [];
+            } catch (e) { pinnedPosterIds = []; }
+        }
+        function savePosterPins() {
+            try { localStorage.setItem('fp_pinned_posters', JSON.stringify(pinnedPosterIds)); } catch (e) {}
         }
 
         function expandInstructors() {
@@ -2503,6 +2526,7 @@
             await loadFromDB();
             loadWishlist();
             loadPins();
+            loadPosterPins();
             renderTopAds();
             renderBanner();
             renderFilters();
@@ -2890,10 +2914,24 @@
 
             // 관리자 조회 시 RLS(adm_write_posters)가 is_visible 제한 없이도 select를 허용해서
             // 삭제(숨김 처리)된 공고가 관리자 화면에는 그대로 남아있던 문제 — 화면에서 걸러냄.
-            const list = posters.filter(p => p.isVisible !== false).filter(p => {
+            let list = posters.filter(p => p.isVisible !== false).filter(p => {
                 const t = p.ptype || 'offline';
                 return currentPosterType === 'all' || t === currentPosterType;
             });
+
+            // ===== 고정 핀: 핀 꽂은 공고를 최상단으로 (핀 순서 유지) =====
+            if (pinnedPosterIds.length > 0) {
+                const pinned = [];
+                pinnedPosterIds.forEach(pid => {
+                    const found = list.find(p => p.id === pid);
+                    if (found) pinned.push(found);
+                });
+                const rest = list.filter(p => !pinnedPosterIds.includes(p.id));
+                list = pinned.concat(rest);
+            }
+
+            // 고정 핀 버튼은 전체보기일 때만 노출 (강사 카드와 동일한 규칙)
+            const showPosterPin = (currentPosterType === 'all');
 
           list.forEach((poster, idx) => {
                 // ===== D-day 계산 =====
@@ -2914,6 +2952,17 @@
                     ? `<span class="absolute top-2.5 right-2.5 z-10 px-2.5 py-1 rounded-full text-[11px] font-bold text-white shadow-sm bg-blue-500"><i class="fas fa-video text-[9px] mr-1"></i>라이브</span>`
                     : `<span class="absolute top-2.5 right-2.5 z-10 px-2.5 py-1 rounded-full text-[11px] font-bold text-white shadow-sm bg-emerald-600"><i class="fas fa-map-marker-alt text-[9px] mr-1"></i>오프라인</span>`;
 
+                // 고정 핀 버튼 (전체보기일 때만 노출, 이미지 우측 하단)
+                const isPosterPinned = pinnedPosterIds.includes(poster.id);
+                const posterPinHtml = showPosterPin ? `
+                    <button data-admin-only onclick="togglePosterPin(${poster.id}, event)" title="${isPosterPinned ? '상단 고정 해제' : '상단 고정'}"
+                            class="absolute bottom-2 right-2 z-20 w-8 h-8 rounded-full shadow-sm flex items-center justify-center transition-all duration-200
+                                   ${isPosterPinned
+                                     ? 'bg-primary text-white ring-1 ring-primary'
+                                     : 'bg-white/95 ring-1 ring-gray-200 text-gray-500 opacity-0 group-hover:opacity-100 hover:text-primary hover:ring-primary/40'}">
+                        <i class="fas fa-thumbtack text-[12px] ${isPosterPinned ? '' : 'rotate-45'}"></i>
+                    </button>` : '';
+
                 const card = document.createElement('div');
                 card.className = 'reveal bg-white rounded-2xl overflow-hidden cursor-pointer flex flex-col h-full group ' +
                                  'ring-1 ring-gray-100 shadow-[0_2px_10px_rgba(17,24,39,0.06)] ' +
@@ -2927,6 +2976,7 @@
                         <div class="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-gray-50 ring-1 ring-gray-100 flex items-center justify-center">
                             ${ddayHtml}
                             ${typeBadge}
+                            ${posterPinHtml}
                             <img src="${poster.image}" alt="${poster.title}" class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.04]">
                         </div>
                     </div>
