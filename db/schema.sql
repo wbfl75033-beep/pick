@@ -328,3 +328,13 @@ create policy adm_write_popups on public.popups
 
 create trigger trg_popups_touch before update on public.popups
   for each row execute function public.touch_updated_at();
+
+
+-- ============================================================
+-- 15. [추가] 공고 상단 고정 핀
+--     강사(instructors)에는 이미 is_pinned 컬럼이 있었지만 화면 코드가
+--     연결되어 있지 않아 브라우저 로컬 저장으로만 동작했음. 방문자마다
+--     다르게 보이는 문제라 DB 컬럼으로 전환 — 공고에도 동일하게 추가.
+-- ============================================================
+alter table public.posters
+  add column if not exists is_pinned boolean not null default false;

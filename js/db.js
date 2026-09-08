@@ -58,6 +58,7 @@
     zoomNote: r.zoom_note || '',
     sortOrder: r.sort_order,
     isVisible: r.is_visible,
+    isPinned: r.is_pinned,
   });
 
   const toBanner = r => ({
@@ -145,6 +146,7 @@
 
   async function fetchPosters() {
     const { data, error } = await sb.from('posters').select('*')
+      .order('is_pinned', { ascending: false })
       .order('sort_order', { ascending: true }).order('id', { ascending: false });
     if (error) err('공고 조회', error);
     return data.map(toPoster);
@@ -309,10 +311,15 @@
     if (error) err('상단고정', error);
   }
 
+  async function setPosterPinned(id, pinned) {
+    const { error } = await sb.from('posters').update({ is_pinned: !!pinned }).eq('id', id);
+    if (error) err('공고 상단고정', error);
+  }
+
   window.PickDB = {
     client: sb,
     fetchCategories, fetchInstructors, fetchPosters, fetchBanners, fetchTopAds, fetchBannerSubtexts, fetchPopups,
     saveInstructor, deleteInstructor, savePoster, deletePoster,
-    saveTopAds, saveBanners, saveBannerSubtexts, savePopups, saveOrder, setPinned,
+    saveTopAds, saveBanners, saveBannerSubtexts, savePopups, saveOrder, setPinned, setPosterPinned,
   };
 })();

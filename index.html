@@ -1224,9 +1224,7 @@
         let currentKeyword = ""; 
         let currentSort = "default";             // default | name | latest
         let wishlist = [];                        // 찜한 강사 id 배열
-        let pinnedIds = [];                       // 상단 고정된 강사 id (핀 꽂은 순서)
-        let pinnedPosterIds = [];                 // 상단 고정된 공고 id (핀 꽂은 순서)
-        let editingId = null; 
+        let editingId = null;
         let currentModalId = null; 
         let editingPosterId = null;
         let currentPosterModalId = null;
@@ -1623,49 +1621,39 @@
             });
         }
 
-        // 상단 고정 핀 토글
-        function togglePin(id, ev) {
+        // 상단 고정 핀 토글 — DB(is_pinned)에 저장. 모든 방문자 화면에 동일하게 반영됨.
+        async function togglePin(id, ev) {
             if (ev) ev.stopPropagation();   // 카드 클릭(모달 열림) 방지
-            const i = pinnedIds.indexOf(id);
-            if (i > -1) {
-                pinnedIds.splice(i, 1);          // 이미 고정 → 해제
-            } else {
-                pinnedIds.push(id);              // 새로 고정 (뒤에 추가 = 핀 순서 유지)
-            }
-            savePins();
+            const inst = instructors.find(i => i.id === id);
+            if (!inst) return;
+            const next = !inst.isPinned;
+            inst.isPinned = next;           // 낙관적 업데이트
             instructorVisibleCount = INSTRUCTOR_LIMIT;   // 상단으로 올라오니 첫 페이지부터
             renderInstructors();
-        }
-        function loadPins() {
             try {
-                const raw = localStorage.getItem('fp_pinned');
-                pinnedIds = raw ? JSON.parse(raw) : [];
-            } catch (e) { pinnedIds = []; }
-        }
-        function savePins() {
-            try { localStorage.setItem('fp_pinned', JSON.stringify(pinnedIds)); } catch (e) {}
+                await PickDB.setPinned(id, next);
+            } catch (e) {
+                inst.isPinned = !next;      // 실패 시 되돌림
+                renderInstructors();
+                alert('고정 상태 저장에 실패했습니다.\n' + (e.message || ''));
+            }
         }
 
-        // 상단 고정 핀 토글 (공고)
-        function togglePosterPin(id, ev) {
+        // 상단 고정 핀 토글 (공고) — DB(is_pinned)에 저장. 모든 방문자 화면에 동일하게 반영됨.
+        async function togglePosterPin(id, ev) {
             if (ev) ev.stopPropagation();   // 카드 클릭(모달 열림) 방지
-            const i = pinnedPosterIds.indexOf(id);
-            if (i > -1) {
-                pinnedPosterIds.splice(i, 1);        // 이미 고정 → 해제
-            } else {
-                pinnedPosterIds.push(id);            // 새로 고정 (뒤에 추가 = 핀 순서 유지)
-            }
-            savePosterPins();
+            const poster = posters.find(p => p.id === id);
+            if (!poster) return;
+            const next = !poster.isPinned;
+            poster.isPinned = next;         // 낙관적 업데이트
             renderPosters();
-        }
-        function loadPosterPins() {
             try {
-                const raw = localStorage.getItem('fp_pinned_posters');
-                pinnedPosterIds = raw ? JSON.parse(raw) : [];
-            } catch (e) { pinnedPosterIds = []; }
-        }
-        function savePosterPins() {
-            try { localStorage.setItem('fp_pinned_posters', JSON.stringify(pinnedPosterIds)); } catch (e) {}
+                await PickDB.setPosterPinned(id, next);
+            } catch (e) {
+                poster.isPinned = !next;    // 실패 시 되돌림
+                renderPosters();
+                alert('고정 상태 저장에 실패했습니다.\n' + (e.message || ''));
+            }
         }
 
         function expandInstructors() {
@@ -2525,8 +2513,6 @@
         async function init() {
             await loadFromDB();
             loadWishlist();
-            loadPins();
-            loadPosterPins();
             renderTopAds();
             renderBanner();
             renderFilters();
@@ -2735,14 +2721,12 @@
 
     // ===== 고정 핀: 기본순일 때만 핀 꽂은 강사를 최상단으로 (핀 순서 유지) =====
     // 최신순·이름순에서는 핀을 강제로 올리지 않고 해당 정렬 순서 그대로 노출
-    if (currentSort === 'default' && pinnedIds.length > 0) {
-        const pinned = [];
-        pinnedIds.forEach(pid => {
-            const found = filtered.find(i => i.id === pid);
-            if (found) pinned.push(found);
-        });
-        const rest = filtered.filter(i => !pinnedIds.includes(i.id));
-        filtered = pinned.concat(rest);
+    if (currentSort === 'default') {
+        const pinned = filtered.filter(i => i.isPinned);
+        if (pinned.length > 0) {
+            const rest = filtered.filter(i => !i.isPinned);
+            filtered = pinned.concat(rest);
+        }
     }
 
     if (countDisplay) countDisplay.textContent = filtered.length;
@@ -2845,7 +2829,7 @@
         }
 
         // 고정 핀 버튼 (전체분야 + 기본정렬 + 검색/태그 없을 때만 노출)
-        const isPinned = pinnedIds.includes(inst.id);
+        const isPinned = !!inst.isPinned;
         const showPin = isAllCategory && (!currentKeyword) && (currentTag === 'all' || currentTag === '전체') && (currentSort === 'default');
         // 핀이 꽂힌 카드는 항상 핀 아이콘 표시, 아니면 hover 시 표시
         const reorderHtml = showPin ? `
@@ -2920,14 +2904,10 @@
             });
 
             // ===== 고정 핀: 핀 꽂은 공고를 최상단으로 (핀 순서 유지) =====
-            if (pinnedPosterIds.length > 0) {
-                const pinned = [];
-                pinnedPosterIds.forEach(pid => {
-                    const found = list.find(p => p.id === pid);
-                    if (found) pinned.push(found);
-                });
-                const rest = list.filter(p => !pinnedPosterIds.includes(p.id));
-                list = pinned.concat(rest);
+            const pinnedPosters = list.filter(p => p.isPinned);
+            if (pinnedPosters.length > 0) {
+                const rest = list.filter(p => !p.isPinned);
+                list = pinnedPosters.concat(rest);
             }
 
             // 고정 핀 버튼은 전체보기일 때만 노출 (강사 카드와 동일한 규칙)
@@ -2953,7 +2933,7 @@
                     : `<span class="absolute top-2.5 right-2.5 z-10 px-2.5 py-1 rounded-full text-[11px] font-bold text-white shadow-sm bg-emerald-600"><i class="fas fa-map-marker-alt text-[9px] mr-1"></i>오프라인</span>`;
 
                 // 고정 핀 버튼 (전체보기일 때만 노출, 이미지 우측 하단)
-                const isPosterPinned = pinnedPosterIds.includes(poster.id);
+                const isPosterPinned = !!poster.isPinned;
                 const posterPinHtml = showPosterPin ? `
                     <button data-admin-only onclick="togglePosterPin(${poster.id}, event)" title="${isPosterPinned ? '상단 고정 해제' : '상단 고정'}"
                             class="absolute bottom-2 right-2 z-20 w-8 h-8 rounded-full shadow-sm flex items-center justify-center transition-all duration-200
