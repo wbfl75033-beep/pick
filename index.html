@@ -83,13 +83,8 @@
             <i class="fas fa-chevron-left text-[10px]"></i>
         </button>
         <button onclick="moveTopAd(1)" aria-label="다음 광고"
-                class="absolute right-11 md:right-16 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white/70 hover:bg-white text-gray-500 shadow-sm flex items-center justify-center transition">
+                class="absolute right-3 md:right-8 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-white/70 hover:bg-white text-gray-500 shadow-sm flex items-center justify-center transition">
             <i class="fas fa-chevron-right text-[10px]"></i>
-        </button>
-        <!-- 닫기 -->
-        <button onclick="closeTopAd()" aria-label="광고 닫기"
-                class="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-30 w-6 h-6 rounded-full text-gray-400 hover:text-gray-700 hover:bg-white/60 flex items-center justify-center transition">
-            <i class="fas fa-times text-[11px]"></i>
         </button>
     </div>
 
@@ -1798,11 +1793,6 @@
                 updateTopAds();
             }, 5000);
         }
-        function closeTopAd() {
-            const bar = document.getElementById('top-ad-bar');
-            if (bar) { bar.style.display = 'none'; clearInterval(topAdTimer); }
-        }
-
         // ===== 방문 팝업 (사이트 접속 시 노출) =====
         let popups = [];          // 관리자 편집용 전체 목록 (숨김 포함)
         let visiblePopups = [];   // 실제 화면에 노출할 목록 (isVisible !== false 만)
@@ -3743,7 +3733,7 @@ function openPosterModal(id) {
             </div>
             <div class="px-4 py-4">
                 <p class="text-[12px] text-gray-500 mb-1.5">아래 번호로 편하게 문의해 주세요.</p>
-                <a href="tel:0225251686" class="flex items-center gap-2 text-[20px] font-black text-primary tracking-tight hover:opacity-80 transition">
+                <a href="tel:025251686" class="flex items-center gap-2 text-[20px] font-black text-primary tracking-tight hover:opacity-80 transition">
                     <i class="fas fa-phone text-base"></i> 02-525-1686
                 </a>
             </div>
