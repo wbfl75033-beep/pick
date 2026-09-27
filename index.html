@@ -495,11 +495,15 @@
                         <div class="flex-1">
                             <div class="flex flex-wrap items-center gap-2">
                                 <input type="date" id="admin-poster-datepick" class="p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition">
+                                <span class="text-gray-400 text-sm">~</span>
+                                <input type="date" id="admin-poster-datepick-end" class="p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition">
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 mt-2">
                                 <select id="admin-poster-timestart" class="p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition"></select>
                                 <span class="text-gray-400 text-sm">~</span>
                                 <select id="admin-poster-timeend" class="p-3 rounded-lg ring-1 ring-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition"></select>
                             </div>
-                            <p class="text-[11px] text-gray-400 mt-1.5">날짜를 선택하고 시작·종료 시간을 고르세요. (요일은 자동으로 표시됩니다)</p>
+                            <p class="text-[11px] text-gray-400 mt-1.5">하루만 진행되면 종료일은 비워두세요. 여러 날에 걸쳐 진행되면 종료일까지 선택하세요 (이 경우 시간 선택은 무시됩니다). 요일은 자동으로 표시됩니다.</p>
                             <input type="hidden" id="admin-poster-date">
                         </div>
                     </div>
@@ -2910,6 +2914,14 @@
             return diff;
         }
 
+        // 카드에 짧게 표시할 날짜만 추출. "~"로 여러 날짜가 걸쳐 있으면 둘 다, 하루면 하나만 표시 (시간·요일 생략)
+        function formatPosterCardDate(dateStr) {
+            if (!dateStr) return '';
+            const dates = String(dateStr).match(/\d{4}년\s*\d{1,2}월\s*\d{1,2}일/g);
+            if (!dates || dates.length === 0) return dateStr;
+            return dates.length >= 2 ? `${dates[0]} ~ ${dates[1]}` : dates[0];
+        }
+
         function renderPosters() {
             const container = document.getElementById('poster-grid');
             if (!container) return;
@@ -2982,7 +2994,7 @@
                     </div>
                     <div class="px-4 pt-3.5 pb-4 flex-1 flex flex-col justify-between">
                         <h4 class="text-[14px] font-bold text-gray-900 mb-2 line-clamp-2 leading-snug break-keep">${poster.title}</h4>
-                        <p class="text-xs text-gray-500 mt-auto flex items-center"><i class="far fa-calendar-alt mr-1.5 text-primaryLight"></i>${poster.date.split('일')[0]}일</p>
+                        <p class="text-xs text-gray-500 mt-auto flex items-center"><i class="far fa-calendar-alt mr-1.5 text-primaryLight"></i>${formatPosterCardDate(poster.date)}</p>
                     </div>
                 `;
                container.appendChild(card);
@@ -3516,6 +3528,7 @@ function openPosterModal(id) {
             ['title','date','location','desc','image','topic','mapurl','route','mapimage','link','applylink','zoomlink','zoomid','zoompw','zoomnote'].forEach(id => { const el = document.getElementById('admin-poster-'+id); if (el) el.value = ''; });
             populatePosterTimeSelects();
             const dp = document.getElementById('admin-poster-datepick'); if (dp) dp.value = '';
+            const dpEnd = document.getElementById('admin-poster-datepick-end'); if (dpEnd) dpEnd.value = '';
             const ts = document.getElementById('admin-poster-timestart'); if (ts) ts.value = '';
             const te = document.getElementById('admin-poster-timeend'); if (te) te.value = '';
             setPosterType('offline');
@@ -3544,41 +3557,57 @@ function openPosterModal(id) {
             startSel.innerHTML = opts;
             endSel.innerHTML = opts;
         }
-        // 선택값 → "2026년 6월 20일 (토) 14:00 - 17:00" 형태 문자열
+        // 선택값 → "2026년 6월 20일 (토) 14:00 - 17:00" 또는 여러 날짜면
+        // "2026년 6월 20일 (토) ~ 2026년 6월 22일 (월)" 형태 문자열
         function buildPosterDateString() {
             const dateEl = document.getElementById('admin-poster-datepick');
+            const endDateEl = document.getElementById('admin-poster-datepick-end');
             const sEl = document.getElementById('admin-poster-timestart');
             const eEl = document.getElementById('admin-poster-timeend');
             const hidden = document.getElementById('admin-poster-date');
             if (!dateEl || !hidden) return;
             const dv = dateEl.value; // yyyy-mm-dd
             if (!dv) { hidden.value = '-'; return; }
-            const [y, mo, d] = dv.split('-').map(Number);
             const days = ['일','월','화','수','목','금','토'];
-            const dow = days[new Date(y, mo - 1, d).getDay()];
-            let str = `${y}년 ${mo}월 ${d}일 (${dow})`;
-            const s = sEl ? sEl.value : '';
-            const e = eEl ? eEl.value : '';
-            if (s && e) str += ` ${s} - ${e}`;
-            else if (s) str += ` ${s}`;
+            const fmtDate = (ymd) => {
+                const [y, mo, d] = ymd.split('-').map(Number);
+                const dow = days[new Date(y, mo - 1, d).getDay()];
+                return `${y}년 ${mo}월 ${d}일 (${dow})`;
+            };
+            let str = fmtDate(dv);
+            const endDv = endDateEl ? endDateEl.value : '';
+            if (endDv && endDv !== dv) {
+                str += ` ~ ${fmtDate(endDv)}`;   // 여러 날짜에 걸친 일정 — 시간은 표기하지 않음
+            } else {
+                const s = sEl ? sEl.value : '';
+                const e = eEl ? eEl.value : '';
+                if (s && e) str += ` ${s} - ${e}`;
+                else if (s) str += ` ${s}`;
+            }
             hidden.value = str;
         }
-        // 편집 시: 저장된 문자열에서 날짜/시간 되살리기 (실패해도 무시)
+        // 편집 시: 저장된 문자열에서 날짜(시작·종료)/시간 되살리기 (실패해도 무시)
         function loadPosterDateFromString(dateStr) {
             populatePosterTimeSelects();
             const dateEl = document.getElementById('admin-poster-datepick');
+            const endDateEl = document.getElementById('admin-poster-datepick-end');
             const sEl = document.getElementById('admin-poster-timestart');
             const eEl = document.getElementById('admin-poster-timeend');
             const hidden = document.getElementById('admin-poster-date');
             if (hidden) hidden.value = dateStr || '';
             if (dateEl) dateEl.value = '';
+            if (endDateEl) endDateEl.value = '';
             if (sEl) sEl.value = '';
             if (eEl) eEl.value = '';
             if (!dateStr) return;
-            const m = dateStr.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
-            if (m && dateEl) {
-                const y = m[1], mo = String(m[2]).padStart(2,'0'), d = String(m[3]).padStart(2,'0');
-                dateEl.value = `${y}-${mo}-${d}`;
+            const matches = [...dateStr.matchAll(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/g)];
+            if (matches[0] && dateEl) {
+                const [, y, mo, d] = matches[0];
+                dateEl.value = `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            }
+            if (matches[1] && endDateEl) {
+                const [, y, mo, d] = matches[1];
+                endDateEl.value = `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
             }
             const times = dateStr.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
             if (times) {
